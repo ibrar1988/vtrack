@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.perigrine.businesscardverification.LoginActivity">
+
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/title_activity_registration"
+                android:layout_gravity="center"
+                android:textStyle="bold"
+                android:textSize="28sp"
+                android:textColor="@android:color/white"
+                android:id="@+id/textView_toolbar_title" />
+
+            </android.support.v7.widget.Toolbar>
+
+    </android.support.design.widget.AppBarLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:weightSum="1">
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TableLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center">
+
+                <TableRow>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:padding="10dip"
+                        android:text="Org Name:*"
+                        android:textSize="15dp" />
+
+                    <EditText
+                        android:id="@+id/et_login_organization_name"
+                        android:layout_width="200dp"
+                        android:layout_height="wrap_content"
+                        android:enabled="false"
+                        android:hint="OrganizationName"
+                        android:textColor="#1E1E1F"
+                        android:padding="10dip"
+                        android:singleLine="true"
+                        android:textSize="20dp"
+                       />
+                </TableRow>
+
+                <TableRow
+                    android:layout_marginTop="15dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:padding="10dip"
+                        android:text="Centers:*"
+                        android:textSize="15dp" />
+
+                    <Spinner
+                        android:id="@+id/spinner_centers"
+                        android:layout_width="400dp"
+                        android:layout_height="wrap_content"
+                        android:padding="5dp"
+                        android:textSize="15dp"
+                        android:prompt="@string/center_title" />
+                </TableRow>
+
+                <TableRow
+                    android:layout_marginTop="15dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:padding="10dip"
+                        android:text="Departments :*"
+                        android:textSize="15dp" />
+
+                    <Spinner
+                        android:id="@+id/spinner_departments"
+                        android:layout_width="400dp"
+                        android:layout_height="wrap_content"
+                        android:padding="5dp"
+                        android:textSize="15dp"
+                        android:prompt="@string/department_title" />
+                </TableRow>
+
+            </TableLayout>
+
+            <Button
+                android:id="@+id/btn_done"
+                android:layout_width="400dp"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_gravity="center"
+                android:layout_marginTop="25dp"
+                android:background="@drawable/bg_button"
+                android:gravity="center"
+                android:text="DONE"
+                android:textColor="@android:color/white" />
+        </LinearLayout>
+    </LinearLayout>
+
+
+</android.support.design.widget.CoordinatorLayout>

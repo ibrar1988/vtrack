@@ -1,0 +1,711 @@
+package com.perigrine.businesscardverification;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Switch;
+import android.widget.TextView;
+
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.perigrine.Helper.APICalls;
+import com.perigrine.Helper.Common;
+import com.perigrine.Helper.NetworkAdapter;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.List;
+import java.util.TimeZone;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
+
+
+public class IssueBadge extends AppCompatActivity implements View.OnClickListener {
+    private EditText et_badgeID;
+    private Switch switch_badge;
+    private Button btn_scan, btn_issueBadge;
+    private TextView tv_scanLabel;
+    private ImageView iv_scan;
+    private String imagePath = "";
+    String primary_color;
+    String secondary_color;
+    String logo_url;
+
+    private static Uri getOutputMediaFileUri() {
+        return Uri.fromFile(getOutputMediaFile());
+    }
+
+    private static File getOutputMediaFile() {
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), "ABBYY Cloud OCR SDK Demo App");
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
+                return null;
+            }
+        }
+        File mediaFile = new File(mediaStorageDir.getPath() + File.separator + "ScanImage.jpg");
+        return mediaFile;
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.issue_badge);
+        SharedPreferences sharedPreferences = getSharedPreferences("new_theme", MODE_PRIVATE);
+        primary_color =  sharedPreferences.getString("primary_Color", "#F00025");
+        secondary_color = sharedPreferences.getString("secondary_Color", "#aaaaaa");
+        logo_url = sharedPreferences.getString("org_Logo","");
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setBackgroundColor(Color.parseColor(primary_color));
+        setSupportActionBar(toolbar);
+        //Back Button for toolbar
+        toolbar.setNavigationIcon(getResources().getDrawable(R.drawable.backnav));
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //What to do on back clicked
+
+                finish();
+            }
+        });
+        findViews();
+        switch_badge.setChecked(false);
+        final String jdata = getIntent().getStringExtra("jdata");
+        if (APICalls.vm.getJdata().trim().equals("")) {//New Visitor
+            if (switch_badge.isChecked()) {
+                tv_scanLabel.setVisibility(View.VISIBLE);
+                iv_scan.setVisibility(View.VISIBLE);
+                btn_scan.setVisibility(View.VISIBLE);
+            } else {//red
+                tv_scanLabel.setVisibility(View.GONE);
+                btn_scan.setVisibility(View.GONE);
+                iv_scan.setVisibility(View.GONE);
+            }
+        } else {//existing visitor
+            tv_scanLabel.setVisibility(View.GONE);
+            btn_scan.setVisibility(View.GONE);
+            iv_scan.setVisibility(View.GONE);
+        }
+
+        switch_badge.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (APICalls.vm.getJdata().trim().equals("")) {//New Visitor
+                    if (isChecked) {//BLUE
+                        tv_scanLabel.setVisibility(View.VISIBLE);
+                        btn_scan.setVisibility(View.VISIBLE);
+                        iv_scan.setVisibility(View.VISIBLE);
+                    } else {//red
+                        tv_scanLabel.setVisibility(View.GONE);
+                        btn_scan.setVisibility(View.GONE);
+                        iv_scan.setVisibility(View.GONE);
+                    }
+                }
+                else
+                {
+                    if (isChecked) {//BLUE
+                        tv_scanLabel.setVisibility(View.VISIBLE);
+                        btn_scan.setVisibility(View.VISIBLE);
+                        iv_scan.setVisibility(View.VISIBLE);
+                    } else {//red
+                        tv_scanLabel.setVisibility(View.GONE);
+                        btn_scan.setVisibility(View.GONE);
+                        iv_scan.setVisibility(View.GONE);
+                    }
+                }
+            }
+        });
+        Common.clearErrorMask(et_badgeID);
+        System.out.println("visitor idd::::::::" + APICalls.vm.getVisitorId());
+    }
+
+    private void findViews() {
+        et_badgeID = (EditText) findViewById(R.id.et_badgeID);
+        switch_badge = (Switch) findViewById(R.id.switch_badge);
+        btn_scan = (Button) findViewById(R.id.btn_scan);
+        btn_issueBadge = (Button) findViewById(R.id.btn_issueBadge);
+        btn_issueBadge.setOnClickListener(this);
+        btn_scan.setOnClickListener(this);
+        tv_scanLabel = (TextView) findViewById(R.id.tv_scanLabel);
+        iv_scan = (ImageView) findViewById(R.id.iv_scan);
+        Common.clearErrorMask(et_badgeID);
+    }
+
+    @Override
+    public void onClick(View v) {
+        if (v == btn_scan) {
+            Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+            Uri fileUri = getOutputMediaFileUri(); // create a file to save the image
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri); // set the image file name
+            startActivityForResult(intent, 123);
+        } else if (v == btn_issueBadge) {
+            if (et_badgeID.getText().toString().trim().equals("")) {
+                et_badgeID.setError("Enter Badge Id");
+            }
+            else {
+                if (APICalls.vm.getJdata().trim().equals("")) {//New Visitor
+                    if (!switch_badge.isChecked()) {
+                        sendBadgeDetails();
+                    } else {
+                        if (iv_scan.getVisibility() == View.VISIBLE) {
+                            if (imagePath.trim().equals("")) {
+                                sendBadgeDetails();
+                            } else {
+                                //send image using multipart
+                                //  try {
+//                                    JSONObject json = new JSONObject();
+//                                    json.put("visitorId", APICalls.vm.getVisitorId());
+//                                    json.put("badgeType", "Blue");
+//                                    json.put("timeZone", TimeZone.getDefault().getID());
+//                                    json.put("badgeId", et_badgeID.getText().toString().trim());
+                                final ProgressDialog pDialog = new ProgressDialog(this);
+                                pDialog.setMessage("Uploading data to server...");
+                                pDialog.setCancelable(false);
+                                pDialog.show();
+                                String result = multipartRequest(APICalls.URL_issueBadgeWithImage, imagePath, "image", "image/jpg");
+                                try {
+                                    JSONObject resultJson = new JSONObject(result);
+                                    if (resultJson.getString("statusCode").trim().equals("200")) {
+                                        pDialog.hide();
+                                        new AlertDialog.Builder(IssueBadge.this)
+                                                .setTitle("Business card Verification")
+                                                .setMessage(resultJson.getString("statusMessage").toString().trim())
+                                                .setIcon(R.drawable.menu_app_icon)
+                                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                                    public void onClick(DialogInterface dialog, int which) {
+                                                        Intent intent = new Intent(IssueBadge.this, HomeVistorsList.class);
+                                                        startActivity(intent);
+                                                    }
+                                                })
+                                                .show();
+                                    }else if(resultJson.getString("statusCode").toString().trim().equals("404")){
+                                        Common.gotoLoginPage(IssueBadge.this);
+                                    } else {
+                                        pDialog.hide();
+                                        new AlertDialog.Builder(IssueBadge.this)
+                                                .setTitle("Business card Verification")
+                                                .setMessage(resultJson.getString("statusMessage").toString().trim())
+                                                .setIcon(R.drawable.menu_app_icon)
+                                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                                    public void onClick(DialogInterface dialog, int which) {
+                                                    }
+                                                })
+                                                .show();
+                                    }
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        } else {
+                            sendBadgeDetails();
+                        }
+                    }
+                } else {
+                    sendBadgeDetails();
+                }
+            }
+        }
+    }
+
+    private void sendBadgeDetails() {
+        try {
+            StringEntity entity = null;
+            final ProgressDialog pDialog = new ProgressDialog(this);
+            pDialog.setMessage("Loading...");
+            pDialog.setCancelable(false);
+            pDialog.show();
+            JSONObject json = new JSONObject();
+            json.put("visitingId", APICalls.vm.getVisitingId());
+            json.put("timeZone", TimeZone.getDefault().getID());
+            json.put("badgeId", et_badgeID.getText().toString().trim());
+            System.out.println("Json:::::" + json);
+            if (!switch_badge.isChecked()) {
+                json.put("badgeType", "Red");
+            } else {
+                json.put("badgeType", "Blue");
+            }
+            System.out.println("Json:::::" + json);
+            entity = new StringEntity(json.toString());
+            List<Header> headers = NetworkAdapter.getHeaders(this);
+            JsonHttpResponseHandler reponseHandler = new JsonHttpResponseHandler() {
+
+                @Override
+                public void onSuccess(int statusCode, Header[] headers,
+                                      JSONObject response) {
+                    pDialog.hide();
+                    System.out.println("response in signout time:::" + response);
+                    try {
+                        if (response.getString("statusCode").toString().trim().equals("200")) {
+                            new AlertDialog.Builder(IssueBadge.this)
+                                    .setTitle("Business card Verification")
+                                    .setMessage(response.getString("statusMessage").toString().trim())
+                                    .setIcon(R.drawable.menu_app_icon)
+                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            Intent in = new Intent(IssueBadge.this, HomeVistorsList.class);
+                                            startActivity(in);
+                                        }
+                                    })
+                                    .show();
+                        } else if(response.getString("statusCode").toString().trim().equals("404")){
+                            Common.gotoLoginPage(IssueBadge.this);
+                        }
+                        else {
+                            new AlertDialog.Builder(IssueBadge.this)
+                                    .setTitle("Business card Verification")
+                                    .setMessage(response.getString("statusMessage").toString().trim())
+                                    .setIcon(R.drawable.menu_app_icon)
+                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                        }
+                                    })
+                                    .show();
+                        }
+                    } catch (JSONException je) {
+                        je.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers,
+                                      Throwable throwable, JSONObject errorResponse) {
+                    System.out.println("errorResponse" + errorResponse);
+                    super.onFailure(statusCode, headers, throwable,
+                            errorResponse);
+
+                    pDialog.hide();
+                }
+            };
+            if (Common.isNetworkAvailable(IssueBadge.this)) {
+                NetworkAdapter.postWithHttpHeader(IssueBadge.this, APICalls.URL_issueBadge,
+                        entity, "application/json", reponseHandler, headers);
+            }else
+            {
+                Common.alertDialog(IssueBadge.this,"No internet connection.Please check the internet connection");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != Activity.RESULT_OK)
+            return;
+        imagePath = "";
+        switch (requestCode) {
+            case 123:
+                imagePath = getOutputMediaFileUri().getPath();
+                File imgFile = new File(imagePath);
+                if (imgFile.exists()) {
+                    Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+                    Bitmap resizedbitmap = Bitmap.createScaledBitmap(myBitmap, 150, 100, true);
+                    iv_scan.setImageBitmap(resizedbitmap);
+                    iv_scan.setVisibility(View.VISIBLE);
+                    System.out.println("imagePath::::" + imagePath);
+                }
+                break;
+        }
+    }
+
+/*
+    public String multipartRequest(String urlTo, String filepath, String filefield, String fileMimeType) {
+
+        HttpURLConnection connection = null;
+        DataOutputStream outputStream = null;
+        InputStream inputStream = null;
+
+        String twoHyphens = "--";
+        String boundary = "------VohpleBoundary4QuqLuM1cE5lMwCy";
+        String lineEnd = "\r\n";
+
+        String result = "";
+
+        int bytesRead, bytesAvailable, bufferSize;
+        byte[] buffer;
+        int maxBufferSize = 1 * 1024 * 1024;
+
+        String[] q = filepath.split("/");
+        int idx = q.length - 1;
+
+        try {
+            URL url = new URL(urlTo);
+            connection = (HttpURLConnection) url.openConnection();
+
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setUseCaches(false);
+            //-------------headers
+            String data = Common.getSavedUserLoginData(IssueBadge.this);
+            JSONObject dataobj = new JSONObject(data).getJSONObject("data");
+            connection.setRequestProperty("userId", dataobj.getString("userId"));
+            connection.setRequestProperty("logedInUserEmail", dataobj.getString("email"));
+            connection.setRequestProperty("securityToken", dataobj.getString("securityToken"));
+            //
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            JSONObject json = new JSONObject();
+            json.put("visitorId", APICalls.vm.getVisitorId());
+            json.put("badgeType", "Blue");
+            json.put("timeZone", TimeZone.getDefault().getID());
+            json.put("badgeId", et_badgeID.getText().toString().trim());
+            String key = "badgeData";
+            String value = json.toString().trim();
+
+
+            connection.setRequestProperty("Connection", "Keep-Alive");
+            connection.setRequestProperty("User-Agent", "Android Multipart HTTP Client 1.0");
+            outputStream = new DataOutputStream(connection.getOutputStream());
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + filefield + "\"; filename=\"" + q[idx] + "\"" + lineEnd);
+            outputStream.writeBytes("ConbadgeDatatent-Type: " + fileMimeType + lineEnd);
+            outputStream.writeBytes("Content-Transfer-Encoding: binary" + lineEnd);
+
+            outputStream.writeBytes(lineEnd);
+
+            File file = new File(filepath);
+            FileInputStream fis = new FileInputStream(file);
+            bytesAvailable = fis.available();
+            bufferSize = Math.min(bytesAvailable, maxBufferSize);
+            buffer = new byte[bufferSize];
+
+            bytesRead = fis.read(buffer, 0, bufferSize);
+            while (bytesRead > 0) {
+                outputStream.write(buffer, 0, bufferSize);
+                bytesAvailable = fis.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                bytesRead = fis.read(buffer, 0, bufferSize);
+            }
+            System.out.println("bytesRead:::" + bytesRead);
+            //outputStream.writeBytes(lineEnd);
+            System.out.println("output stream::" + outputStream.toString().trim());
+
+
+            if (200 != connection.getResponseCode()) {
+                System.out.println("Failed to upload code:" + connection.getResponseCode() + " " + connection.getResponseMessage());
+            }
+
+            inputStream = connection.getInputStream();
+
+            result = this.convertStreamToString(inputStream);
+            System.out.println("result in multipart:::::" + result);
+            fis.close();
+            inputStream.close();
+            outputStream.flush();
+            outputStream.close();
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+
+    private String convertStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return sb.toString();
+    }
+*/
+
+
+    public String multipartRequest(String urlTo, String filepath, String filefield, String fileMimeType) {
+        Log.e("multipartRequest" + filepath, ":" + urlTo);
+        HttpURLConnection connection = null;
+        DataOutputStream outputStream = null;
+        InputStream inputStream = null;
+        String twoHyphens = "--";
+        String boundary = "*****" + Long.toString(System.currentTimeMillis()) + "*****";
+        String lineEnd = "\r\n";
+        String result = "";
+        System.out.println("urlTo::" + urlTo);
+        int bytesRead, bytesAvailable, bufferSize;
+        byte[] buffer;
+        int maxBufferSize = 1 * 1024 * 1024;
+        String[] q = filepath.split("/");
+        int idx = q.length - 1;
+        try {
+            File file = new File(filepath);
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            URL url = new URL(urlTo);
+            connection = (HttpURLConnection) url.openConnection();
+
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setUseCaches(false);
+
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Connection", "Keep-Alive");
+            connection.setRequestProperty("User-Agent", "Android Multipart HTTP Client 1.0");
+            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            //-------------headers
+
+            String data = Common.getSavedUserLoginData(this);
+            JSONObject dataObj = new JSONObject(data).getJSONObject("data");
+            connection.setRequestProperty("userId", dataObj.getString("userId"));
+            connection.setRequestProperty("logedInUserEmail", dataObj.getString("email"));
+            connection.setRequestProperty("securityToken", dataObj.getString("securityToken"));
+            connection.setRequestProperty("loggedInOrgId", dataObj.getString("organizationId"));
+
+
+            //connection.setRequestProperty("fuzzyLogic", "1");
+            //connection.setRequestProperty("govAPI", "1");
+//            connection.setRequestProperty("siteID", dataobj.getString("siteID"));
+
+            outputStream = new DataOutputStream(connection.getOutputStream());
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + filefield + "\"; filename=\"" + q[idx] + "\"" + lineEnd);
+            outputStream.writeBytes("Content-Type: " + fileMimeType + lineEnd);
+            outputStream.writeBytes("Content-Transfer-Encoding: binary" + lineEnd);
+
+            outputStream.writeBytes(lineEnd);
+
+            bytesAvailable = fileInputStream.available();
+            bufferSize = Math.min(bytesAvailable, maxBufferSize);
+            buffer = new byte[bufferSize];
+
+            bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            while (bytesRead > 0) {
+                outputStream.write(buffer, 0, bufferSize);
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            }
+
+            outputStream.writeBytes(lineEnd);
+            JSONObject json = new JSONObject();
+            json.put("visitingId", APICalls.vm.getVisitingId());
+            json.put("badgeType", "Blue");
+            json.put("timeZone", TimeZone.getDefault().getID());
+            json.put("badgeId", et_badgeID.getText().toString().trim());
+            String key = "badgeData";
+            String value = json.toString().trim();
+            System.out.println("visitor data:::" + value);
+            //  while (keys.hasNext()) {
+            //  String key = keys.next();
+            // String value = parmas.get(key);
+
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + key + "\"" + lineEnd);
+            outputStream.writeBytes("Content-Type: text/plain" + lineEnd);
+            outputStream.writeBytes(lineEnd);
+            outputStream.writeBytes(value);
+            outputStream.writeBytes(lineEnd);
+            //  }
+
+            outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+
+            if (200 != connection.getResponseCode()) {
+                System.out.println("Failed to upload code:" + connection.getResponseCode() + " " + connection.getResponseMessage());
+            }
+
+            inputStream = connection.getInputStream();
+
+            result = this.convertStreamToString(inputStream);
+
+            fileInputStream.close();
+            inputStream.close();
+            outputStream.flush();
+            outputStream.close();
+            System.out.println("result:::::::" + result);
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+
+    /*public String multipartRequest(String urlTo, String filepath, String filefield, String fileMimeType) {
+        HttpURLConnection connection = null;
+        DataOutputStream outputStream = null;
+        InputStream inputStream = null;
+
+        String twoHyphens = "--";
+        String boundary = "*****" + Long.toString(System.currentTimeMillis()) + "*****";
+        String lineEnd = "\r\n";
+
+        String result = "";
+        System.out.println("urlTo::" + urlTo);
+
+        int bytesRead, bytesAvailable, bufferSize;
+        byte[] buffer;
+        int maxBufferSize = 1 * 1024 * 1024;
+
+        String[] q = filepath.split("/");
+        int idx = q.length - 1;
+
+        try {
+            File file = new File(filepath);
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            URL url = new URL(urlTo);
+            connection = (HttpURLConnection) url.openConnection();
+
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setUseCaches(false);
+
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Connection", "Keep-Alive");
+            connection.setRequestProperty("User-Agent", "Android Multipart HTTP Client 1.0");
+            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            //-------------headers
+            String data = Common.getSavedUserLoginData(IssueBadge.this);
+            JSONObject dataObj = new JSONObject(data).getJSONObject("data");
+            connection.setRequestProperty("userId", dataObj.getString("userId"));
+            connection.setRequestProperty("logedInUserEmail", dataObj.getString("email"));
+            connection.setRequestProperty("securityToken", dataObj.getString("securityToken"));
+//            connection.setRequestProperty("siteID", dataObj.getString("siteID"));
+
+            outputStream = new DataOutputStream(connection.getOutputStream());
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + filefield + "\"; filename=\"" + q[idx] + "\"" + lineEnd);
+            outputStream.writeBytes("Content-Type: " + fileMimeType + lineEnd);
+            outputStream.writeBytes("Content-Transfer-Encoding: binary" + lineEnd);
+
+            outputStream.writeBytes(lineEnd);
+
+            bytesAvailable = fileInputStream.available();
+            bufferSize = Math.min(bytesAvailable, maxBufferSize);
+            buffer = new byte[bufferSize];
+
+            bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            while (bytesRead > 0) {
+                outputStream.write(buffer, 0, bufferSize);
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            }
+
+            outputStream.writeBytes(lineEnd);
+
+            JSONObject json = new JSONObject();
+            json.put("visitingId", APICalls.vm.getVisitingId());
+            json.put("badgeType", "Blue");
+            json.put("timeZone", TimeZone.getDefault().getID());
+            json.put("badgeId", et_badgeID.getText().toString().trim());
+            String key = "badgeData";
+            String value = json.toString().trim();
+            System.out.println("badgeData:::" + value);
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + key + "\"" + lineEnd);
+            outputStream.writeBytes("Content-Type: text/plain" + lineEnd);
+            outputStream.writeBytes(lineEnd);
+            outputStream.writeBytes(value);
+            outputStream.writeBytes(lineEnd);
+            //  }
+
+            outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+
+            if (200 != connection.getResponseCode()) {
+                System.out.println("Failed to upload code:" + connection.getResponseCode() + " " + connection.getResponseMessage());
+            }
+
+            inputStream = connection.getInputStream();
+            result = this.convertStreamToString(inputStream);
+            System.out.println("result:::::"+result);
+            fileInputStream.close();
+            inputStream.close();
+            outputStream.flush();
+            outputStream.close();
+            return result;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+*/
+
+    private String convertStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_home, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_home) {
+            Intent in = new Intent(this, HomeVistorsList.class);
+            startActivity(in);
+        }
+        return super.onOptionsItemSelected(item);
+    }
+}
+

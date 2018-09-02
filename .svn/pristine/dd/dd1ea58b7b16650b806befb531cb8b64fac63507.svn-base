@@ -1,0 +1,34 @@
+<resources>
+
+    <string name="app_name">VisitorTracking</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_meeting">Meeting</string>
+    <string name="action_logout">Logout</string>
+    <string name="action_add">Add Visitor</string>
+    <string name="title_activity_login">Visitor Tracking</string>
+    <string name="title_activity_registration">Registration</string>
+    <string name="title_activity_visitor_tracking">VisitorTracking</string>
+    <string name="title_activity_add_visitor">AddVisitor</string>
+    <string name="title_activity_issue_badge">IssueBadge</string>
+    <string name="title_activity_splash">Splash</string>
+    <string name="title_activity_visitor_details_display">VisitorDetailsDisplay</string>
+    <string name="title_activity_apply_filters">Apply Filters</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="title_activity_overridden">Overridden</string>
+    <string name="center_title">Select a Center</string>
+    <string name="department_title">Select Department</string>
+    <string name="dialog_close_button">x</string>
+    <string-array name="planets_array">
+        <item>Select one…</item>  <!-- Prompt item -->
+        <item>Mercury</item>
+        <item>Venus</item>
+        <item>Earth</item>
+        <item>Mars</item>
+        <item>Jupiter</item>
+        <item>Saturn</item>
+        <item>Uranus</item>
+        <item>Neptune</item>
+    </string-array>
+
+
+</resources>

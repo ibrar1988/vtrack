@@ -1,0 +1,46 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.techv.bcv.Splash">
+
+    <item
+        android:id="@+id/action_meeting"
+        android:icon="@drawable/meeting"
+        android:orderInCategory="1"
+        android:title="@string/action_meeting"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/menu_search_icon"
+        android:orderInCategory="1"
+        android:title="search"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_filter"
+        android:icon="@drawable/menu_filter"
+        android:orderInCategory="1"
+        android:title="filter"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_plus"
+        android:icon="@drawable/menu_plus"
+        android:orderInCategory="1"
+        android:title="plus"
+        app:showAsAction="always" />
+    <!--<item
+        android:id="@+id/action_settings"
+        android:icon="@drawable/menu_settings"
+        android:orderInCategory="1"
+        android:title="@string/action_settings"
+        app:showAsAction="always" />-->
+
+    <item
+        android:id="@+id/action_logout"
+        android:icon="@drawable/logout_icon"
+        android:orderInCategory="1"
+        android:title="@string/action_logout"
+        app:showAsAction="always" />
+
+</menu>

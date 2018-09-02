@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:layout_width="400dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Badge ID:*"
+            android:textColor="#bf1919"
+            android:textSize="20dp" />
+
+        <EditText
+            android:id="@+id/et_badgeID"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:hint="Badge ID"
+            android:digits="abcdefghijklmnopqrstuvwxyz1234567890"
+            android:inputType="text"
+            android:textSize="20dp"
+            android:singleLine="true" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="400dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Badge Type:"
+            android:textColor="#bf1919"
+            android:textSize="20dp" />
+
+        <TextView
+            android:id="@+id/textView_red"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Red"
+            android:background="@drawable/red_filled_rectangle"
+            android:textColor="@android:color/white"
+            android:textSize="20dp"
+            android:gravity="center"
+            android:padding="5dp"/>
+
+        <TextView
+            android:id="@+id/textView_blue"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Blue"
+            android:background="@drawable/blue_empty_rectangle"
+            android:textColor="@color/blue"
+            android:textSize="20dp"
+            android:gravity="center"
+            android:padding="5dp"/>
+
+       <!-- <Switch
+            android:id="@+id/switch_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textOff="Red"
+            android:layout_marginLeft="10dp"
+            android:textOn="Blue" />-->
+
+    </LinearLayout>
+
+
+    <TextView
+        android:id="@+id/tv_scanLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Scan Driving Licence/Passport/Any other"
+        android:textColor="#bf1919"
+        android:textSize="18dp"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/iv_scan"
+        android:layout_width="150dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="15dp"
+        android:gravity="center"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/btn_scan"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/btn_bg"
+        android:gravity="center"
+        android:text="SCAN"
+        android:textColor="#ffffff"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/btn_issueBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/btn_bg"
+        android:padding="10dp"
+        android:gravity="center"
+        android:text="ISSUE BADGE"
+        android:textColor="@android:color/white" />
+
+
+</LinearLayout>

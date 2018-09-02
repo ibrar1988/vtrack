@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@android:color/white"
+    android:orientation="vertical">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/darker_gray"
+                android:padding="10dp"
+                android:text="Sort by"
+                android:textColor="#ffffff"
+                android:textSize="16dp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/sort_by_filter"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/white"
+                android:drawableRight="@drawable/forward"
+                android:padding="10dp"
+                android:text="Data ASC"
+                android:textColor="#000000"
+                android:textSize="16dp" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/darker_gray"
+                android:padding="10dp"
+                android:text="Quick Filters"
+                android:textColor="#ffffff"
+                android:textSize="16dp"
+                android:textStyle="bold" />
+
+            <RadioGroup
+                android:id="@+id/quick_filter_radioGroup"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content">
+            </RadioGroup>
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/darker_gray"
+                android:padding="10dp"
+                android:text="Advanced Filters"
+                android:textColor="#ffffff"
+                android:textSize="16dp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/advanced_filter"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/white"
+                android:drawableRight="@drawable/forward"
+                android:padding="10dp"
+                android:text="Advanced Filters"
+                android:textColor="#000000"
+                android:textSize="16dp" />
+
+        </LinearLayout>>
+
+    </ScrollView>
+</LinearLayout>

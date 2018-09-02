@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:id="@+id/layout_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:background="@drawable/curved_rectangle"
+        android:gravity="center"
+        android:padding="7dp"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/inputSearch"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.9"
+            android:hint="Search by Name or Company Name"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
+            android:text=""
+            android:paddingLeft="5dp"
+            android:background="@null"
+            android:textSize="18sp" />
+
+    </LinearLayout>
+
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/ll_update_vistordata"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <ListView
+                android:id="@+id/visitor_ListView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="@null"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="10dp">
+
+            </ListView>
+        </android.support.v4.widget.SwipeRefreshLayout>
+</LinearLayout>

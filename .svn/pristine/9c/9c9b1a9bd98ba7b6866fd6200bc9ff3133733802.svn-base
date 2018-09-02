@@ -1,0 +1,251 @@
+package com.perigrine.businesscardverification;
+
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.perigrine.Extras.Utils;
+import com.perigrine.Helper.APICalls;
+import com.perigrine.Helper.Common;
+import com.perigrine.Helper.NetworkAdapter;
+import com.perigrine.Model.MeetingDetails;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.List;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
+
+public class MeetingsActivity extends AppCompatActivity {
+
+    RecyclerView.Adapter recyclerViewAdapter;
+    RecyclerView.LayoutManager recylerViewLayoutManager;
+    RecyclerView recycler_list_details;
+
+    TextView textView_name, textView_email;
+    EditText editText_search;
+    ImageView imageView_search;
+    LinearLayout layout_details;
+    String primary_color, secondary_color, logo_url;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_meeting);
+
+        SharedPreferences sharedPreferences = getSharedPreferences("new_theme", MODE_PRIVATE);
+        primary_color =  sharedPreferences.getString("primary_Color", "#F00025");
+        secondary_color = sharedPreferences.getString("secondary_Color", "#aaaaaa");
+        logo_url = sharedPreferences.getString("org_Logo","");
+        setToolBar();
+        initViews();
+
+    }
+
+    private void setToolBar() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setBackgroundColor(Color.parseColor(primary_color));
+        toolbar.setTitle("Visitor Meetings");
+        setSupportActionBar(toolbar);
+        //Back Button for toolbar
+        toolbar.setNavigationIcon(getResources().getDrawable(R.drawable.backnav));
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //What to do on back clicked
+
+                finish();
+            }
+        });
+    }
+
+    private void initViews() {
+
+        recycler_list_details = (RecyclerView) findViewById(R.id.recycler_list_details);
+        editText_search = (EditText) findViewById(R.id.editText_search);
+        textView_name = (TextView) findViewById(R.id.textView_name);
+        textView_email = (TextView) findViewById(R.id.textView_email);
+        imageView_search = (ImageView) findViewById(R.id.imageView_search);
+        layout_details = (LinearLayout) findViewById(R.id.layout_details);
+
+        layout_details.setVisibility(View.GONE);
+        recylerViewLayoutManager = new LinearLayoutManager(MeetingsActivity.this);
+        recycler_list_details.setLayoutManager(recylerViewLayoutManager);
+
+        imageView_search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if(!editText_search.getText().toString().trim().equals("")){
+                    if(Utils.isValidEmail(editText_search.getText().toString())){
+                        getMeetingWithEmail(editText_search.getText().toString());
+                    }else {
+                        Utils.showToast(MeetingsActivity.this,"Please enter Valid Email Id");
+                    }
+                }else {
+                    Utils.showToast(MeetingsActivity.this,"Please enter Email Id");
+                }
+
+            }
+        });
+    }
+
+    private void getMeetingWithEmail(String emailId) {
+
+            if (Common.isNetworkAvailable(MeetingsActivity.this)) {
+                final ProgressDialog pDialog = new ProgressDialog(MeetingsActivity.this);
+                pDialog.setMessage("Loading...");
+                pDialog.setCancelable(false);
+                pDialog.show();
+                StringEntity entity = null;
+                try {
+                    //visitor ID
+                    JSONObject js = new JSONObject();
+                    js.put("email", emailId);
+                    js.put("centerId", APICalls.getSelectedCenterID(this));
+                    System.out.println("js::" + js.toString());
+                    entity = new StringEntity(js.toString());
+                    List<Header> headers = NetworkAdapter.getHeaders(MeetingsActivity.this);
+                    JsonHttpResponseHandler reponseHandler = new JsonHttpResponseHandler() {
+
+                        @Override
+                        public void onSuccess(int statusCode, Header[] headers,
+                                              JSONObject response) {
+                            try {
+                                if (response.getString("statusCode").toString().trim().equals("200")) {
+                                    pDialog.hide();
+                                    UpdateUI(response);
+                                } else if (response.getString("statusCode").toString().trim().equals("404")) {
+                                    pDialog.hide();
+                                    Common.gotoLoginPage(MeetingsActivity.this);
+                                } else {
+                                    pDialog.hide();
+                                    new android.app.AlertDialog.Builder(MeetingsActivity.this)
+                                            .setTitle("Business card Verification")
+                                            .setMessage("Something is not right here now, Please feel free to close the app and come back later")
+                                            .setIcon(R.drawable.menu_app_icon)
+                                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                }
+                                            })
+                                            .show();
+                                }
+                            } catch (Exception e) {
+
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                            super.onFailure(statusCode, headers, responseString, throwable);
+                            pDialog.hide();
+                            System.out.println("response" + responseString);
+                            Intent in = new Intent(MeetingsActivity.this, HomeVistorsList.class);
+                            startActivity(in);
+                        }
+
+                        @Override
+                        public void onFailure(int statusCode, Header[] headers,
+                                              Throwable throwable, JSONObject errorResponse) {
+                            pDialog.hide();
+                            System.out.println("errorResponse" + errorResponse);
+                            super.onFailure(statusCode, headers, throwable,
+                                    errorResponse);
+
+                        }
+                    };
+
+                    NetworkAdapter.postWithHttpHeader(MeetingsActivity.this, APICalls.URL_MeetingByEmail,
+                            entity, "application/json", reponseHandler, headers);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }else{
+                Common.alertDialog(MeetingsActivity.this,"No internet connection.Please check the internet connection");
+            }
+    }
+
+    private void UpdateUI(JSONObject response) {
+        try{
+            layout_details.setVisibility(View.VISIBLE);
+
+            JSONObject  data = response.getJSONObject("data");
+            JSONObject  visitorObj = data.getJSONObject("visitorObj");
+            JSONArray meetings = data.getJSONArray("meetingDetails");
+            String name = visitorObj.getString("name");
+            String email = visitorObj.getString("email");
+
+            if(!email.equals("")) {
+                textView_email.setText(email);
+            }
+            if(!name.equals("")) {
+                textView_name.setText(name);
+            }
+
+            if(meetings != null && meetings.length() > 0) {
+                Type listType = new TypeToken<List<MeetingDetails>>() {}.getType();
+                List<MeetingDetails> meetingDetails = new Gson().fromJson(meetings.toString(), listType);
+                Log.i("meetings", Arrays.asList(meetingDetails).toString());
+
+                recyclerViewAdapter = new MeetingDetailsAdapter(MeetingsActivity.this, meetingDetails);
+                recycler_list_details.setAdapter(recyclerViewAdapter);
+            }
+
+        }catch (Exception e){e.printStackTrace();}
+    }
+
+    private void showAlert(){
+        AlertDialog dialog;
+        AlertDialog.Builder builder = new AlertDialog.Builder(MeetingsActivity.this);
+        builder.setMessage("Email not found")
+                .setTitle("Error")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+        dialog = builder.create();
+        dialog.show();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_meeting, menu);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == R.id.action_add){
+            //visitor tracking details navigation
+        }
+        return super.onOptionsItemSelected(item);
+    }
+}

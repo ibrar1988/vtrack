@@ -1,0 +1,50 @@
+Applications Memory Usage (kB):
+Uptime: 5983437 Realtime: 5983437
+
+** MEMINFO in pid 6382 [com.perigrine.businesscardverification] **
+                   Pss  Private  Private  Swapped     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------
+  Native Heap    69809    69780        0     1040    72920    72847       72
+  Dalvik Heap     6630     6592        0      636     9841     7180     2661
+ Dalvik Other     1077     1076        0       12                           
+        Stack      252      252        0        0                           
+       Ashmem        2        0        0        0                           
+      Gfx dev     3608     3608        0        0                           
+    Other dev        5        0        4        0                           
+     .so mmap     2693      176     1916     2040                           
+    .apk mmap      729        0      448        0                           
+    .ttf mmap      185        0      180        0                           
+    .dex mmap     6664      140     6524        0                           
+    .oat mmap     4170        0     2276        0                           
+    .art mmap     2178     1920       28      124                           
+   Other mmap       49        8       20        0                           
+   EGL mtrack    12000    12000        0        0                           
+      Unknown      228      228        0       96                           
+        TOTAL   110279    95780    11396     3948    82761    80027     2733
+ 
+ App Summary
+                       Pss(KB)
+                        ------
+           Java Heap:     8540
+         Native Heap:    69780
+                Code:    11660
+               Stack:      252
+            Graphics:    15608
+       Private Other:     1336
+              System:     3103
+ 
+               TOTAL:   110279      TOTAL SWAP (KB):     3948
+ 
+ Objects
+               Views:      247         ViewRootImpl:        4
+         AppContexts:        4           Activities:        3
+              Assets:        3        AssetManagers:        2
+       Local Binders:       15        Proxy Binders:       28
+       Parcel memory:        7         Parcel count:       30
+    Death Recipients:        0      OpenSSL Sockets:        0
+ 
+ SQL
+         MEMORY_USED:        0
+  PAGECACHE_OVERFLOW:        0          MALLOC_SIZE:        0
+ 

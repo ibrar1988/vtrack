@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="20dp">
+
+
+        <TableRow>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Name :*"
+                android:textSize="20dp" />
+
+            <EditText
+                android:id="@+id/et_override_name"
+                android:layout_width="300dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:singleLine="true"
+                android:hint="Name" />
+
+        </TableRow>
+
+        <TableRow
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Email :*"
+                android:textSize="20dp" />
+
+            <EditText
+                android:id="@+id/et_override_email"
+                android:layout_width="300dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:singleLine="true"
+                android:hint="Email" />
+
+        </TableRow>
+
+        <TableRow
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Phone :*"
+                android:textSize="20dp" />
+
+            <EditText
+                android:id="@+id/et_override_phno"
+                android:layout_width="300dp"
+                android:layout_height="wrap_content"
+                android:hint="Phone"
+                android:inputType="phone"
+                android:maxLength="20"
+                android:layout_marginLeft="10dp"
+                android:singleLine="true"
+               />
+
+        </TableRow>
+
+    </TableLayout>
+
+    <Button
+        android:id="@+id/btn_override"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/btn_bg"
+        android:text="OVERRIDDEN"
+        android:layout_marginTop="10dp"
+        android:textColor="@android:color/white" />
+</LinearLayout>

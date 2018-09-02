@@ -1,0 +1,443 @@
+package com.perigrine.businesscardverification;
+
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.perigrine.Helper.APICalls;
+import com.perigrine.Helper.Common;
+import com.perigrine.Helper.NetworkAdapter;
+import com.perigrine.Model.VisitorModel;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.List;
+import java.util.TimeZone;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
+import cz.msebera.android.httpclient.message.BasicHeader;
+
+public class VisitorDetailsDisplay extends AppCompatActivity implements View.OnClickListener {
+    private Button btn_verify;
+    private EditText et_add_name, et_add_company, et_add_phno, et_add_email,
+            et_add_title, et_add_homepage, et_add_address, et_add_whomToMeet,et_deptname,et_add_whomToMeet_email,getEt_add_whomToMeet_Phno,et_add_whomToMeet_role;
+    private VisitorModel vm;
+    private String selectedDeptID;
+    String primary_color;
+    String secondary_color;
+    String logo_url;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.visitor_details_display);
+        SharedPreferences sharedPreferences = getSharedPreferences("new_theme", MODE_PRIVATE);
+        primary_color =  sharedPreferences.getString("primary_Color", "#F00025");
+        secondary_color = sharedPreferences.getString("secondary_Color", "#aaaaaa");
+        logo_url = sharedPreferences.getString("org_Logo","");
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setBackgroundColor(Color.parseColor(primary_color));
+        setSupportActionBar(toolbar);
+        findViews();
+        //Back Button for toolbar
+        toolbar.setNavigationIcon(getResources().getDrawable(R.drawable.backnav));
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //What to do on back clicked
+                finish();
+            }
+        });
+        vm = APICalls.vm;
+        //et_add_name.setText(vm.getName());
+        et_add_company.setText(vm.getCompany());
+        et_add_email.setText(vm.getEmail());
+        et_add_phno.setText(vm.getPhno());
+        et_add_title.setText(vm.getTitle());
+        et_add_homepage.setText(vm.getHomePage());
+        et_add_address.setText(vm.getAddress());
+        et_add_whomToMeet.setText(vm.getWhomToMeet());
+        et_add_whomToMeet_email.setText(vm.getEmpEmail());
+        getEt_add_whomToMeet_Phno.setText(vm.getEmpPhno());
+        et_add_whomToMeet_role.setText(vm.getEmpRole());
+        et_deptname.setText(vm.getDeptName());
+        selectedDeptID=vm.getDeptID();
+    }
+
+    private void findViews() {
+        btn_verify = (Button) findViewById(R.id.btn_verify);
+        btn_verify.setOnClickListener(this);
+        et_add_name = (EditText) findViewById(R.id.et_add_name);
+        et_add_company = (EditText) findViewById(R.id.et_add_company);
+        et_add_phno = (EditText) findViewById(R.id.et_add_phno);
+        et_add_email = (EditText) findViewById(R.id.et_add_email);
+        et_add_title = (EditText) findViewById(R.id.et_add_title);
+        et_add_homepage = (EditText) findViewById(R.id.et_add_homepage);
+        et_add_address = (EditText) findViewById(R.id.et_add_address);
+        et_add_whomToMeet = (EditText) findViewById(R.id.et_add_whomToMeet);
+        et_add_whomToMeet_email = (EditText) findViewById(R.id.et_add_whomToMeet_email);
+        getEt_add_whomToMeet_Phno = (EditText) findViewById(R.id.et_add_whomToMeet_phno);
+        et_add_whomToMeet_role = (EditText) findViewById(R.id.et_add_whomToMeet_Emprole);
+        et_deptname = (EditText) findViewById(R.id.et_deptName);
+    }
+
+
+    @Override
+    public void onClick(View v) {
+        if (v == btn_verify) {
+            if(Common.isNetworkAvailable(VisitorDetailsDisplay.this)) {
+                if (vm.isImageTaken()) {
+
+                    //use image sending
+                    final ProgressDialog pDialog = new ProgressDialog(this);
+                    pDialog.setMessage("Uploading data to server...");
+                    pDialog.setCancelable(false);
+                    if(!pDialog.isShowing())
+                    pDialog.show();
+                    String result = multipartRequest(APICalls.URL_addvisitorbasicInfo, vm.getImagePath(), "image", "image/jpg");
+                    try {
+                        final JSONObject resultJson = new JSONObject(result);
+                        if(pDialog.isShowing()){
+                            pDialog.dismiss();
+                        }
+                        if (resultJson.getString("statusCode").trim().equals("200")) {
+                            new AlertDialog.Builder(VisitorDetailsDisplay.this)
+                                    .setTitle("Business card Verification")
+                                    .setMessage(resultJson.getString("statusMessage").toString().trim())
+                                    .setIcon(R.drawable.menu_app_icon)
+                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            try {
+                                                JSONObject json = resultJson.getJSONObject("data");
+
+                                                vm.setVisitorId(json.getString("visitorId").toString().trim());
+                                                APICalls.vm = vm;
+                                                Intent intent = new Intent(VisitorDetailsDisplay.this, IssueBadge.class);
+                                                startActivity(intent);
+                                            } catch (JSONException je) {
+                                                je.printStackTrace();
+                                            }
+                                        }
+                                    })
+                                    .show();
+                        } else if(resultJson.getString("statusCode").toString().trim().equals("404")){
+                            Common.gotoLoginPage(VisitorDetailsDisplay.this);
+                        }else {
+                            new AlertDialog.Builder(VisitorDetailsDisplay.this)
+                                    .setTitle("Business card Verification")
+                                    .setMessage(resultJson.getString("statusMessage").toString().trim())
+                                    .setIcon(R.drawable.menu_app_icon)
+                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                        }
+                                    })
+                                    .show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    try {
+
+                        final ProgressDialog pDialog = new ProgressDialog(this);
+                        pDialog.setMessage("Uploading data to server...");
+                        pDialog.setCancelable(false);
+                        if(!pDialog.isShowing())
+                        pDialog.show();
+                        StringEntity entity = null;
+                        JSONObject json = new JSONObject();
+                        json.put("name", et_add_name.getText().toString().trim());
+                        json.put("mobileNo", et_add_phno.getText().toString().trim());
+                        json.put("workPhone", et_add_phno.getText().toString().trim());
+                        json.put("email", et_add_email.getText().toString().trim());
+                        json.put("company", et_add_company.getText().toString().trim());
+                        json.put("designation", et_add_title.getText().toString().trim());
+                        json.put("jobTitle", et_add_title.getText().toString().trim());
+                        json.put("homePage", et_add_homepage.getText().toString().trim());
+                        json.put("address", et_add_address.getText().toString().trim());
+                        json.put("whomToMeet", et_add_whomToMeet.getText().toString().trim());
+                        json.put("timeZone", TimeZone.getDefault().getID().toString().trim());
+                        json.put("departmentId", Integer.parseInt(selectedDeptID));
+                        json.put("employeeId", APICalls.employeeID);
+                        Log.d("visitorUID",":"+APICalls.vm.getVisitorId());
+                        json.put("visitorUID", APICalls.vm.getVisitorId());//need to check
+                        //Have to add the custom field values
+
+                        System.out.println("json::" + json);
+                        entity = new StringEntity(json.toString());
+
+                        List<Header> headers = NetworkAdapter.getHeadersWithGovtAPI(this);
+
+                        JsonHttpResponseHandler reponseHandler = new JsonHttpResponseHandler() {
+
+                            @Override
+                            public void onSuccess(int statusCode, Header[] headers,
+                                                  JSONObject response) {
+                                System.out.println("response" + response);
+                                if(pDialog.isShowing()){
+                                    pDialog.dismiss();
+                                }
+                                try {
+                                    if (response.getString("statusCode").toString().trim().equals("200")) {
+
+                                            JSONObject json = response.getJSONObject("data");
+                                            if (json.getString("isRecordFound").toString().trim().equals("true")) {
+                                                vm.setVisitorId(json.getString("visitorId").toString().trim());
+                                                APICalls.vm = vm;
+                                                new AlertDialog.Builder(VisitorDetailsDisplay.this)
+                                                        .setTitle("Business card Verification")
+                                                        .setMessage("Details Matched\n Do You Want Override?")
+                                                        .setIcon(R.drawable.menu_app_icon)
+                                                        .setPositiveButton("Continue", new DialogInterface.OnClickListener() {
+                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                Intent in = new Intent(VisitorDetailsDisplay.this, Overridden.class);
+                                                                startActivity(in);
+                                                            }
+                                                        })
+                                                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                                            @Override
+                                                            public void onClick(DialogInterface dialog, int which) {
+
+                                                            }
+                                                        })
+                                                        .show();
+                                            } else {
+                                                vm.setVisitorId(json.getString("visitorId").toString().trim());
+                                                APICalls.vm = vm;
+                                                Intent in = new Intent(VisitorDetailsDisplay.this, IssueBadge.class);
+                                                startActivity(in);
+                                            }
+
+                                    } else if(response.getString("statusCode").toString().trim().equals("404")){
+                                        Common.gotoLoginPage(VisitorDetailsDisplay.this);
+                                    }else {
+                                        new AlertDialog.Builder(VisitorDetailsDisplay.this)
+                                                .setTitle("Business card Verification")
+                                                .setMessage(response.getString("statusMessage").toString().trim())
+                                                .setIcon(R.drawable.menu_app_icon)
+                                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                                    public void onClick(DialogInterface dialog, int which) {
+                                                    }
+                                                })
+                                                .show();
+                                    }
+                                } catch (JSONException je) {
+                                    je.printStackTrace();
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(int statusCode, Header[] headers,
+                                                  Throwable throwable, JSONObject errorResponse) {
+                                System.out.println("errorResponse" + errorResponse);
+                                super.onFailure(statusCode, headers, throwable,
+                                        errorResponse);
+
+                                if(pDialog.isShowing()){
+                                    pDialog.dismiss();
+                                }
+                            }
+
+                    };
+                        NetworkAdapter.postWithHttpHeader(VisitorDetailsDisplay.this, APICalls.URL_addvisitorbasicInfoWithoutCardImg,
+                                entity, "application/json", reponseHandler, headers);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }else{
+                Common.alertDialog(VisitorDetailsDisplay.this,"No internet connection.Please check the internet connection");
+            }
+        }
+    }
+
+    public String multipartRequest(String urlTo, String filepath, String filefield, String fileMimeType) {
+        Log.e("multipartRequest"+filepath,":"+urlTo);
+        HttpURLConnection connection = null;
+        DataOutputStream outputStream = null;
+        InputStream inputStream = null;
+
+        String twoHyphens = "--";
+        String boundary = "*****" + Long.toString(System.currentTimeMillis()) + "*****";
+        String lineEnd = "\r\n";
+
+        String result = "";
+        System.out.println("urlTo::" + urlTo);
+
+        int bytesRead, bytesAvailable, bufferSize;
+        byte[] buffer;
+        int maxBufferSize = 1 * 1024 * 1024;
+
+        String[] q = filepath.split("/");
+        int idx = q.length - 1;
+
+        try {
+            File file = new File(filepath);
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            URL url = new URL(urlTo);
+            connection = (HttpURLConnection) url.openConnection();
+
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setUseCaches(false);
+
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Connection", "Keep-Alive");
+            connection.setRequestProperty("User-Agent", "Android Multipart HTTP Client 1.0");
+            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            //-------------headers
+            String data = Common.getSavedUserLoginData(VisitorDetailsDisplay.this);
+            JSONObject dataObj = new JSONObject(data).getJSONObject("data");
+            connection.setRequestProperty("userId", dataObj.getString("userId"));
+            connection.setRequestProperty("logedInUserEmail", dataObj.getString("email"));
+            connection.setRequestProperty("securityToken", dataObj.getString("securityToken"));
+            connection.setRequestProperty("loggedInOrgId",dataObj.getString("organizationId"));
+
+            //employee id
+            connection.setRequestProperty("employeeId",APICalls.employeeID);
+            Log.e("loginorg id ",":" + dataObj.getString("organizationId"));
+            connection.setRequestProperty("fuzzyLogic","1");
+            connection.setRequestProperty("govAPI","1");
+//            connection.setRequestProperty("siteID", dataObj.getString("siteID"));
+
+            outputStream = new DataOutputStream(connection.getOutputStream());
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + filefield + "\"; filename=\"" + q[idx] + "\"" + lineEnd);
+            outputStream.writeBytes("Content-Type: " + fileMimeType + lineEnd);
+            outputStream.writeBytes("Content-Transfer-Encoding: binary" + lineEnd);
+
+            outputStream.writeBytes(lineEnd);
+
+            bytesAvailable = fileInputStream.available();
+            bufferSize = Math.min(bytesAvailable, maxBufferSize);
+            buffer = new byte[bufferSize];
+
+            bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            while (bytesRead > 0) {
+                outputStream.write(buffer, 0, bufferSize);
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            }
+
+            outputStream.writeBytes(lineEnd);
+
+            // Upload POST Data
+            String key = "visitorData";
+            JSONObject json = new JSONObject();
+            json.put("name", et_add_name.getText().toString().trim());
+            json.put("lastName", et_add_name.getText().toString().trim());
+            json.put("mobileNo", et_add_phno.getText().toString().trim());
+            json.put("workPhone", et_add_phno.getText().toString().trim());
+            json.put("email", et_add_email.getText().toString().trim());
+            json.put("company", et_add_company.getText().toString().trim());
+            json.put("designation", et_add_title.getText().toString().trim());
+            json.put("jobTitle", et_add_title.getText().toString().trim());
+            json.put("homePage", et_add_homepage.getText().toString().trim());
+            json.put("address", et_add_address.getText().toString().trim());
+            json.put("whomToMeet", et_add_whomToMeet.getText().toString().trim());
+            json.put("timeZone", TimeZone.getDefault().getID().toString().trim());
+            json.put("departmentId", Integer.parseInt(selectedDeptID));
+            json.put("employeeId", APICalls.employeeID);
+            json.put("visitorUID", APICalls.vm.getVisitorId());//need to check
+            String value = json.toString().trim();
+            System.out.println("visitor data:::" + value);
+            //  while (keys.hasNext()) {
+            //  String key = keys.next();
+            // String value = parmas.get(key);
+
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + key + "\"" + lineEnd);
+            outputStream.writeBytes("Content-Type: text/plain" + lineEnd);
+            outputStream.writeBytes(lineEnd);
+            outputStream.writeBytes(value);
+            outputStream.writeBytes(lineEnd);
+            //  }
+
+            outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+
+            if (200 != connection.getResponseCode()) {
+                System.out.println("Failed to upload code:" + connection.getResponseCode() + " " + connection.getResponseMessage());
+            }
+
+            inputStream = connection.getInputStream();
+
+            result = this.convertStreamToString(inputStream);
+
+            fileInputStream.close();
+            inputStream.close();
+            outputStream.flush();
+            outputStream.close();
+            System.out.println("result:::::::" + result);
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+
+    private String convertStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_home, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_home) {
+            Intent in = new Intent(this, HomeVistorsList.class);
+            startActivity(in);
+        }
+        return super.onOptionsItemSelected(item);
+    }
+}

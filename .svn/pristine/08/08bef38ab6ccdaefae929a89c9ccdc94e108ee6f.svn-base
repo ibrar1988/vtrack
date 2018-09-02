@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#bf1919">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="wrap_content"
+                android:layout_height="?attr/actionBarSize"
+                android:layout_centerInParent="true">
+
+                <TextView
+                    android:id="@+id/sort_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="Sort"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+            </android.support.v7.widget.Toolbar>
+
+            <Button
+                android:id="@+id/button_clear_sort"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:layout_gravity="right"
+                android:background="#0000"
+                android:text="Clear"
+                android:textStyle="bold"
+                android:textColor="#ffffff"
+                android:textSize="15dp" />
+
+        </RelativeLayout>
+
+    </android.support.design.widget.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioGroup
+                android:id="@+id/rg_sort"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content">
+
+                <RadioButton
+                    android:id="@+id/radioSortByAscendingName"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="Name ASC" />
+
+                <RadioButton
+                    android:id="@+id/radioSortByDescendingName"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="Name DSC" />
+
+                <RadioButton
+                    android:id="@+id/radioSortByAscendingCompany"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="Company ASC" />
+
+                <RadioButton
+                    android:id="@+id/radioSortByDescendingCompany"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="Company DSC" />
+
+                <RadioButton
+                    android:id="@+id/radioSortByAscendingDate"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="Date ASC" />
+
+                <RadioButton
+                    android:id="@+id/radioSortByDescendingDate"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:text="Date DSC" />
+
+
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="30dp"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/button_apply_sort"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#bf1919"
+                    android:text="Apply Sort"
+                    android:padding="5dp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:textSize="15dp" />
+
+                <Button
+                    android:id="@+id/button_cancel_sort"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="100dp"
+                    android:background="#bf1919"
+                    android:text="Cancel"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:textSize="15dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="25dp"
+                android:gravity="center">
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

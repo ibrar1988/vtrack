@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@android:color/white"
+    android:orientation="vertical">
+
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/darker_gray"
+        android:padding="10dp"
+        android:text="Sort by"
+        android:textColor="#ffffff"
+        android:textSize="16dp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_filters_asc"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:drawableRight="@drawable/forward"
+        android:padding="10dp"
+        android:text="Data ASC"
+        android:textColor="#000000"
+        android:textSize="16dp" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/darker_gray"
+        android:padding="10dp"
+        android:text="Quick Filters"
+        android:textColor="#ffffff"
+        android:textSize="16dp"
+        android:textStyle="bold" />
+
+    <RadioGroup
+        android:id="@+id/rg_quickFilters"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+
+        <!--      <RadioButton
+                  android:id="@+id/rb_all"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:padding="7dp"
+                  android:text="All"
+                  android:textColor="@android:color/black"
+                  android:textSize="16dp" />
+
+              <RadioButton
+                  android:id="@+id/rb_ovverride"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:padding="7dp"
+                  android:text="Filter by Overridden"
+                  android:textColor="@android:color/black"
+                  android:textSize="16dp" />
+
+              <RadioButton
+                  android:id="@+id/rb_matches"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:padding="7dp"
+                  android:text="Filter by Matches Found"
+                  android:textColor="@android:color/black"
+                  android:textSize="16dp" />
+
+              <RadioButton
+                  android:id="@+id/rb_issued"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:padding="7dp"
+                  android:text="Filter by Issued"
+                  android:textColor="@android:color/black"
+                  android:textSize="16dp" />
+
+              <RadioButton
+                  android:id="@+id/rb_verified"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:padding="7dp"
+                  android:text="Filter by Verified"
+                  android:textColor="@android:color/black"
+                  android:textSize="16dp" />
+
+              <RadioButton
+                  android:id="@+id/rb_redBadge"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:padding="7dp"
+                  android:text="Filter by Red Badge"
+                  android:textColor="@android:color/black"
+                  android:textSize="16dp" />
+
+              <RadioButton
+                  android:id="@+id/rb_blueBadge"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:padding="7dp"
+                  android:text="Filter by Blue Badge"
+                  android:textColor="@android:color/black"
+                  android:textSize="16dp" />-->
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/darker_gray"
+        android:padding="10dp"
+        android:text="Advanced Filters"
+        android:textColor="#ffffff"
+        android:textSize="16dp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_filters_advanced"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:drawableRight="@drawable/forward"
+        android:padding="10dp"
+        android:text="Advanced Filters"
+        android:textColor="#000000"
+        android:textSize="16dp" />
+</LinearLayout>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.perigrine.businesscardverification">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application
+        android:allowBackup="true"
+        android:name="com.perigrine.Extras.BusinessCardVerification"
+        android:icon="@drawable/icon"
+        android:label="@string/app_name"
+        android:noHistory="true"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name="com.perigrine.businesscardverification.Splash"
+            android:label="@string/app_name"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.perigrine.businesscardverification.LoginActivity"
+            android:screenOrientation="landscape"
+            android:windowSoftInputMode="stateHidden"
+            android:label=""
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity
+            android:name="com.perigrine.businesscardverification.RegistrationActivity"
+            android:label=""
+            android:windowSoftInputMode="stateHidden"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity
+            android:name="com.perigrine.businesscardverification.HomeVistorsList"
+            android:label=""
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.perigrine.businesscardverification.VisitorDetailsForm"
+            android:label=""
+            android:windowSoftInputMode="stateHidden"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"
+            />
+        <activity
+            android:name="com.perigrine.businesscardverification.IssueBadge"
+            android:label=""
+            android:windowSoftInputMode="stateHidden"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.perigrine.businesscardverification.VisitorDetailsDisplay"
+            android:label=""
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.perigrine.businesscardverification.SettingsActivity"
+            android:label=""
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.perigrine.businesscardverification.ApplyFilters"
+            android:label=""
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.perigrine.businesscardverification.Overridden"
+            android:label=""
+            android:windowSoftInputMode="stateHidden"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity
+            android:name="com.perigrine.businesscardverification.MeetingsActivity"
+            android:label=""
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme.NoActionBar" />
+    </application>
+
+</manifest>

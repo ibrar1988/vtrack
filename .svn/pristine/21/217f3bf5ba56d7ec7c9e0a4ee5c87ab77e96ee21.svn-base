@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="50dp">
+
+        <!-- Email Label -->
+        <LinearLayout
+            android:layout_width="400dp"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="User Name:*  "
+                android:textSize="20dp" />
+
+            <EditText
+                android:id="@+id/et_login_userName"
+                android:layout_width="match_parent"
+             android:hint="Email ID"
+                android:layout_height="wrap_content"
+                android:inputType="textEmailAddress" />
+        </LinearLayout>
+
+        <!-- Password Label -->
+        <LinearLayout
+            android:layout_width="400dp"
+            android:layout_marginTop="20dp"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:text="Password:*    "
+                android:textSize="20dp" />
+
+            <EditText
+                android:id="@+id/et_login_password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+               android:hint="Password"
+                android:textColorHint="@color/colorPrimary" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_login_center_information"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/ll_login_organization_id"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <CheckedTextView
+                android:id="@+id/tv_login_center_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:drawableLeft="@drawable/radio_on"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="center Name" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_login"
+            android:layout_width="400dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:background="@drawable/bg_button"
+
+            android:text="Login"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+
+
+    </LinearLayout>
+</ScrollView>

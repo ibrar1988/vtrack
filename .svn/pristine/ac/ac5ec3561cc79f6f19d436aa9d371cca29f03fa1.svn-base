@@ -1,0 +1,1548 @@
+package com.perigrine.businesscardverification;
+
+
+import android.annotation.TargetApi;
+import android.app.AlertDialog;
+import android.app.DatePickerDialog;
+import android.app.ProgressDialog;
+import android.app.TimePickerDialog;
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.annotation.Nullable;
+import android.support.design.widget.TextInputLayout;
+import android.support.v4.app.Fragment;
+import android.support.v7.widget.Toolbar;
+import android.text.format.DateFormat;
+import android.text.format.Time;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.DatePicker;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.TimePicker;
+import android.widget.Toast;
+
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.perigrine.Helper.APICalls;
+import com.perigrine.Helper.Common;
+import com.perigrine.Helper.CropOption;
+import com.perigrine.Helper.CropOptionAdapter;
+import com.perigrine.Helper.NetworkAdapter;
+import com.perigrine.Model.VisitorModel;
+import com.perigrine.OCRSDk.BusCardSettings;
+import com.perigrine.OCRSDk.Client;
+import com.perigrine.OCRSDk.Task;
+import com.squareup.picasso.Picasso;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
+
+import static android.content.Context.MODE_PRIVATE;
+
+/**
+ * Created by root on 10/3/17.
+ */
+public class AddViewVisitor extends Fragment implements View.OnClickListener {
+
+    int count = 0;
+    ProgressDialog dialog;
+    String primary_color;
+    String secondary_color;
+    String logo_url;
+    View recurring_Visits_View;
+    ArrayList<String> recurring_selected = new ArrayList<>();
+    Uri mImageCaptureUri;
+    private String overrideData = "";
+    private String resultUrl = "result.txt";
+    private ImageView iv_businessCard_captured;
+    private LinearLayout ll_extraLayout;
+    private Context context;
+    // private Button btn_getVisitorDetails;
+    // private EditText et_visitorID;
+    private Button btn_verify, btn_overRidden;
+    private EditText et_add_name, et_add_company, et_add_phno, et_add_email,
+            et_add_title, et_add_homepage, et_add_address, et_add_scannedDate, et_add_whomToMeet_email, et_add_whomTomeet_phno, et_add_whomTomeet_role, et_host_name, et_visit_purpose, et_recurring_visits;
+    private String imageFilePath = "";
+    private Spinner spn_departments;
+    private TextView tv_departments;
+    private String selected_visitingId = "";
+
+    private static Uri getOutputMediaFileUri() {
+        return Uri.fromFile(getOutputMediaFile());
+    }
+
+    /**
+     * Create a File for saving an image or video
+     */
+    private static File getOutputMediaFile() {
+        // To be safe, you should check that the SDCard is mounted
+        // using Environment.getExternalStorageState() before doing this.
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), "ABBYY Cloud OCR SDK Demo App");
+        // This location works best if you want the created images to be shared
+        // between applications and persist after your app has been uninstalled.
+
+        // Create the storage directory if it does not exist
+        if (!mediaStorageDir.exists()) {
+
+            if (!mediaStorageDir.mkdirs()) {
+                System.out.println("Oops! Failed create  ABBYY Cloud OCR SDK Demo App");
+                return null;
+            }
+        }
+
+        // Create a media file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
+                Locale.getDefault()).format(new Date());
+        File mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg");
+        return mediaFile;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences("new_theme", MODE_PRIVATE);
+        primary_color = sharedPreferences.getString("primary_Color", "#F00025");
+        secondary_color = sharedPreferences.getString("secondary_Color", "#aaaaaa");
+        logo_url = sharedPreferences.getString("org_Logo", "");
+        setHasOptionsMenu(true);
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.content_visitor_basic_details, container, false);
+        context = getContext();
+        findViews(view);
+        getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+        return view;
+    }
+
+    private void findViews(View view) {
+        //btn_getVisitorDetails = (Button) view.findViewById(R.id.btn_getVisitorDetails);
+        //btn_getVisitorDetails.setBackgroundColor(Color.parseColor(primary_color));
+        btn_verify = (Button) view.findViewById(R.id.btn_verify);
+        btn_verify.setOnClickListener(this);
+        btn_verify.setBackgroundColor(Color.parseColor(primary_color));
+        // btn_getVisitorDetails.setOnClickListener(this);
+        btn_overRidden = (Button) view.findViewById(R.id.btn_overRidden);
+        btn_overRidden.setOnClickListener(this);
+        btn_overRidden.setBackgroundColor(Color.parseColor(primary_color));
+        // et_visitorID = (EditText) view.findViewById(R.id.et_visitor_id);
+        //et_visitorID.setBackground(APICalls.getDrawable(et_visitorID, primary_color));
+        et_add_name = (EditText) view.findViewById(R.id.et_add_name);
+        et_add_name.setBackground(APICalls.getDrawable(et_add_name, primary_color));
+        et_add_company = (EditText) view.findViewById(R.id.et_add_company);
+        et_add_company.setBackground(APICalls.getDrawable(et_add_company, primary_color));
+        et_add_phno = (EditText) view.findViewById(R.id.et_add_phno);
+        et_add_phno.setBackground(APICalls.getDrawable(et_add_phno, primary_color));
+        et_add_email = (EditText) view.findViewById(R.id.et_add_email);
+        et_add_email.setBackground(APICalls.getDrawable(et_add_email, primary_color));
+        et_add_title = (EditText) view.findViewById(R.id.et_add_title);
+        et_add_title.setBackground(APICalls.getDrawable(et_add_title, primary_color));
+        et_add_homepage = (EditText) view.findViewById(R.id.et_add_homepage);
+        et_add_homepage.setBackground(APICalls.getDrawable(et_add_homepage, primary_color));
+        et_add_address = (EditText) view.findViewById(R.id.et_add_address);
+        et_add_address.setBackground(APICalls.getDrawable(et_add_address, primary_color));
+
+        ////
+        et_host_name = (EditText) view.findViewById(R.id.et_host_name);
+        et_host_name.setBackground(APICalls.getDrawable(et_host_name, primary_color));
+        et_visit_purpose = (EditText) view.findViewById(R.id.et_visit_purpose);
+        et_visit_purpose.setBackground(APICalls.getDrawable(et_visit_purpose, primary_color));
+        spn_departments = (Spinner) view.findViewById(R.id.spn_department);
+        //spn_department.setBackground(APICalls.getDrawable(spn_department, primary_color));
+        ArrayAdapter<String> deptAdapter = null;
+        deptAdapter = new ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, Common.getDepartmentNameFromLoginData(context));
+        deptAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spn_departments.setAdapter(deptAdapter);
+        tv_departments = (TextView) view.findViewById(R.id.tv_departments);
+        // Drop down layout style - list view with radio button
+
+        et_recurring_visits = (EditText) view.findViewById(R.id.et_recurring_visits);
+        et_recurring_visits.setBackground(APICalls.getDrawable(et_recurring_visits, primary_color));
+        et_recurring_visits.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //MyTimePicker myTimePicker = new MyTimePicker(context, et_recurring_visits);
+                showRecurringVisits();
+            }
+        });
+        //DyNAMIC FILDS
+
+        SharedPreferences sharedpreferences = getActivity().getSharedPreferences("prefs", MODE_PRIVATE);
+     //   String data = sharedpreferences.getString("visitor_item", "");
+        String data = Common.getSavedUserLoginData(this.getActivity());
+        JSONObject jsonnobj = null;
+        try {
+            JSONObject dataObj = new JSONObject(data).getJSONObject("data");
+            String advFeatures = dataObj.getString("advFeatures");
+            if (!advFeatures.contains("department")) {
+                spn_departments.setVisibility(View.GONE);
+                tv_departments.setVisibility(View.GONE);
+            }
+            if (!advFeatures.contains("meeting")) {
+                et_recurring_visits.setVisibility(View.GONE);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        //hiding the homepage and address fileds
+        // et_add_title.setVisibility(View.GONE);
+        // et_add_homepage.setVisibility(View.GONE);
+        // et_add_address.setVisibility(View.GONE);
+        ll_extraLayout = (LinearLayout) view.findViewById(R.id.ll_extrafileds);
+        iv_businessCard_captured = (ImageView) view.findViewById(R.id.iv_businessCard_captured);
+
+
+        //getCustomFields();
+        try {
+            if (!VisitorDetailsForm.jdata.trim().equals("")) {
+                btn_verify.setText("REVISIT");
+                System.out.println("jdata:::::::" + VisitorDetailsForm.jdata);
+                final JSONObject jsonObject = new JSONObject(VisitorDetailsForm.jdata);
+                et_add_name.setText(jsonObject.get("name").toString().trim());
+                et_add_company.setText(jsonObject.get("company").toString().trim());
+                et_add_phno.setText(jsonObject.get("mobileNo").toString().trim());
+                et_add_email.setText(jsonObject.get("email").toString().trim());
+                et_add_title.setText(jsonObject.get("designation").toString().trim());
+                et_add_homepage.setText(jsonObject.get("homePage").toString().trim());
+                et_add_address.setText(jsonObject.get("address").toString().trim());
+                //  et_add_scannedDate.setText(jsonObject.get("visitedDateTime").toString().trim());
+                selected_visitingId=jsonObject.get("VisitingId").toString().trim();
+                et_host_name.setText(jsonObject.get("whomToMeet").toString().trim());
+                et_visit_purpose.setText(jsonObject.get("purpose").toString().trim());
+                //Override details
+                if (jsonObject.get("isOverridden").toString().trim().equals("true")) {
+                    overrideData = jsonObject.get("overrideDetails").toString().trim();
+                    btn_overRidden.setVisibility(View.VISIBLE);
+                } else {
+                    btn_overRidden.setVisibility(View.GONE);
+                }
+                if (jsonObject.get("cardImage").toString().trim().equals("")) {
+                    iv_businessCard_captured.setImageDrawable(getResources().getDrawable(R.drawable.default_card));
+                } else {
+                    Picasso.with(getActivity()).load(Common.getImageUrl(jsonObject.get("cardImage").toString().trim())).placeholder(R.drawable.default_card).resize(320, 300).into(iv_businessCard_captured);
+                }
+                iv_businessCard_captured.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        ImageView iv = new ImageView(getActivity());
+                        try {
+                            if (!jsonObject.get("cardImage").toString().trim().equals("")) {
+                                Picasso.with(getActivity()).load(Common.getImageUrl(jsonObject.get("cardImage").toString().trim())).placeholder(R.drawable.default_card).resize(320, 300).into(iv);
+                            } else {
+                                iv.setImageDrawable(getResources().getDrawable(R.drawable.default_card));
+                            }
+                            new AlertDialog.Builder(getActivity())
+                                    .setView(iv)
+                                    .show();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+
+                et_add_name.setEnabled(false);
+                et_add_company.setEnabled(false);
+                et_add_phno.setEnabled(false);
+                et_add_email.setEnabled(false);
+                et_add_title.setEnabled(false);
+                et_add_homepage.setEnabled(false);
+                et_add_address.setEnabled(false);
+                et_add_scannedDate.setEnabled(false);
+            } else {
+                btn_verify.setText("VERIFY");
+                et_add_name.setEnabled(true);
+                et_add_company.setEnabled(true);
+                et_add_phno.setEnabled(true);
+                et_add_email.setEnabled(true);
+                et_add_title.setEnabled(true);
+                et_add_homepage.setEnabled(true);
+                et_add_address.setEnabled(true);
+                et_add_scannedDate.setEnabled(true);
+//                ll_add_scannedDate.setVisibility(View.GONE);
+            }
+        } catch (Exception e) {
+            e.toString();
+        }
+    }
+
+    private void UpdateUI(String s) {
+        try {
+            JSONObject jObject = new JSONObject(s);
+            JSONArray dataArray = jObject.getJSONArray("data");
+            System.out.println("data array" + dataArray.length());
+            for (int i = 0; i < dataArray.length(); i++) {
+                JSONObject jObj = dataArray.getJSONObject(i);
+                Log.e("TAG", ":" + jObj.getString("fieldType"));
+                if (jObj.getString("fieldType").equalsIgnoreCase("dropdown")) {
+                    addSpinnerViewToLayout(jObj.getString("lableName"), jObj.getJSONArray("custGroupValues"));
+                } else if (jObj.getString("fieldType").equalsIgnoreCase("text")) {
+                    addEditTextView(jObj.getString("lableName"));
+                } else if (jObj.getString("fieldType").equalsIgnoreCase("checkbox")) {
+                    addCheckBoxView(jObj.getString("lableName"), jObj.getJSONArray("custGroupValues"));
+                } else if (jObj.getString("fieldType").equalsIgnoreCase("radiobutton")) {
+                    addRadioButtonView(jObj.getString("lableName"), jObj.getJSONArray("custGroupValues"));
+                } else if (jObj.getString("fieldType").equalsIgnoreCase("calendar")) {
+                    addCalendarView(jObj.getString("lableName"));
+                } else if (jObj.getString("fieldType").equalsIgnoreCase("EditText")) {
+                    addEditTextView(jObj.getString("lableName"));
+                }
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void addCalendarView(final String lableName) {
+        // EditText
+        // Instantiate EditText view which will be held inside of
+        // TextInputLayout
+        final EditText editText = new EditText(getActivity());
+        // Add an ID to it
+        editText.setId(View.generateViewId());
+        // Get the Hint text for EditText field which will be presented to the
+        // user in the TextInputLayout
+        editText.setHint(lableName);
+        // Set the font size of the text that the user will enter
+        editText.setTextSize(16);
+        // Set the color of the text inside the EditText field
+        // Define layout params for the EditTExt field
+        LinearLayout.LayoutParams editTextParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        editTextParams.setMargins(5, 0, 5, 10);
+        // Set editText layout parameters to the editText field
+        editText.setLayoutParams(editTextParams);
+        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.mipmap.ic_today_black_24dp, 0);
+
+        /*
+         * Next, you do the same thing for the TextInputLayout (instantiate,
+         * generate and set ID, set layoutParams, set layoutParamt for
+         * TextInputLayout
+         */
+
+        // TextInputLayout
+        final TextInputLayout textInputLayout = new TextInputLayout(getActivity());
+        textInputLayout.setId(View.generateViewId());
+        LinearLayout.LayoutParams textInputLayoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        textInputLayout.setLayoutParams(textInputLayoutParams);
+
+        // Then you add editText into a textInputLayout
+        textInputLayout.addView(editText, editTextParams);
+        textInputLayoutParams.setMargins(5, 0, 5, 10);
+        // Lastly, you add the textInputLayout into (or onto) the layout you've
+        // chosen.
+        ll_extraLayout.addView(textInputLayout, textInputLayoutParams);
+        editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                Log.e("has foucsed", ":" + hasFocus);
+
+                if (hasFocus) {
+                    v.performClick();
+                }
+            }
+        });
+        editText.setShowSoftInputOnFocus(false);
+        editText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                DatePickerDialog dateDlg = new DatePickerDialog(getActivity(),
+                        new DatePickerDialog.OnDateSetListener() {
+
+                            public void onDateSet(DatePicker view, int year,
+                                                  int monthOfYear, int dayOfMonth) {
+                                Time chosenDate = new Time();
+                                chosenDate.set(dayOfMonth, monthOfYear, year);
+                                long dtDob = chosenDate.toMillis(true);
+                                CharSequence strDate = DateFormat.format("MMMM dd, yyyy", dtDob);
+                                Toast.makeText(getActivity(),
+                                        "Date picked: " + strDate, Toast.LENGTH_SHORT).show();
+                                editText.setText(strDate);
+                            }
+                        }, 2011, 0, 1);
+
+                dateDlg.setMessage(lableName);
+                int iDay, iMonth, iYear;
+                Calendar cal = Calendar.getInstance();
+                iDay = cal.get(Calendar.DAY_OF_MONTH);
+                iMonth = cal.get(Calendar.MONTH);
+                iYear = cal.get(Calendar.YEAR);
+                dateDlg.updateDate(iYear, iMonth, iDay);
+                dateDlg.show();
+                InputMethodManager imm = (InputMethodManager)
+                        getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromInputMethod(v.getApplicationWindowToken(), 0);
+            }
+        });
+    }
+
+    private void addRadioButtonView(String lableName, JSONArray custGroupValues) {
+        final RadioButton[] rb = new RadioButton[custGroupValues.length()];
+        RadioGroup rg = new RadioGroup(getActivity()); //create the RadioGrouap
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(0, 20, 20, 20);
+        rg.setLayoutParams(params);
+        rg.setOrientation(RadioGroup.VERTICAL);//or RadioGroup.HORIZONTAL
+        TextView txtView = new TextView(getActivity());
+        txtView.setTextColor(Color.parseColor("#000000"));
+        LinearLayout.LayoutParams txtParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        txtParams.setMargins(20, 0, 20, 20);
+        txtView.setLayoutParams(txtParams);
+        txtView.setText(lableName);
+        rg.addView(txtView);
+        try {
+            for (int i = 0; i < custGroupValues.length(); i++) {
+                rb[i] = new RadioButton(getActivity());
+                RadioGroup.LayoutParams rParams = new RadioGroup.LayoutParams(RadioGroup.LayoutParams.WRAP_CONTENT, RadioGroup.LayoutParams.WRAP_CONTENT);
+                rParams.setMargins(0, 0, 20, 0);
+                rb[i].setText(" " + custGroupValues.getJSONObject(i).getString("displayValue"));
+                rb[i].setId(i + 100);
+                rg.addView(rb[i]);
+            }
+        } catch (Exception e) {
+            e.toString();
+        }
+        ll_extraLayout.addView(rg);
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private void addCheckBoxView(String labelName, JSONArray custGroupValues) throws JSONException {
+        TextView txtView = new TextView(getActivity());
+        txtView.setTextColor(Color.parseColor("#000000"));
+        LinearLayout.LayoutParams txtParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        txtParams.setMargins(20, 0, 20, 20);
+        txtView.setLayoutParams(txtParams);
+        txtView.setText(labelName);
+        ll_extraLayout.addView(txtView);
+        CheckBox[] checkBox = new CheckBox[custGroupValues.length()];
+        for (int i = 0; i < custGroupValues.length(); i++) {
+            checkBox[i] = new CheckBox(getActivity());
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(20, 20, 20, 20);
+            checkBox[i].setTag(labelName);
+            checkBox[i].setId(View.generateViewId());
+            checkBox[i].setText(custGroupValues.getJSONObject(i).getString("displayValue"));
+            ll_extraLayout.addView(checkBox[i]);
+            checkBox[i].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked) {
+                        Toast.makeText(getActivity(), buttonView.getTag() + ":" + buttonView.getText().toString(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+
+
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private void addEditTextView(String labelName) {
+        // EditText
+        // Instantiate EditText view which will be held inside of
+        // TextInputLayout
+        EditText editText = new EditText(getActivity());
+        // Add an ID to it
+        editText.setId(View.generateViewId());
+        // Get the Hint text for EditText field which will be presented to the
+        // user in the TextInputLayout
+        editText.setHint(labelName);
+        // Set color of the hint text inside the EditText field
+        // Set the font size of the text that the user will enter
+        editText.setTextSize(16);
+        // Set the color of the text inside the EditText field
+        // Define layout params for the EditTExt field
+        LinearLayout.LayoutParams editTextParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        editTextParams.setMargins(5, 10, 5, 10);
+        // Set editText layout parameters to the editText field
+        editText.setLayoutParams(editTextParams);
+
+        /*
+         * Next, you do the same thing for the TextInputLayout (instantiate,
+         * generate and set ID, set layoutParams, set layoutParamt for
+         * TextInputLayout
+         */
+
+        // TextInputLayout
+        TextInputLayout textInputLayout = new TextInputLayout(getActivity());
+        textInputLayout.setId(View.generateViewId());
+        LinearLayout.LayoutParams textInputLayoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        textInputLayout.setLayoutParams(textInputLayoutParams);
+
+        // Then you add editText into a textInputLayout
+        textInputLayout.addView(editText, editTextParams);
+        textInputLayoutParams.setMargins(5, 10, 5, 10);
+        // Lastly, you add the textInputLayout into (or onto) the layout you've
+        // chosen.
+        ll_extraLayout.addView(textInputLayout, textInputLayoutParams);
+
+    }
+
+    private void addSpinnerViewToLayout(String labelName, JSONArray custGroupValues) {
+        final List<String> spinnerValuelist = new ArrayList<String>();
+        //Get the dropdown values
+        spinnerValuelist.add(labelName);
+        try {
+            for (int i = 0; i < custGroupValues.length(); i++) {
+                JSONObject jobject = custGroupValues.getJSONObject(i);
+                spinnerValuelist.add(jobject.getString("displayValue"));
+            }
+            Log.e("TAG", ":spinervalue list size" + spinnerValuelist.size());
+            final Spinner spinner = new Spinner(getActivity());
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(0, 20, 10, 20);
+            spinner.setLayoutParams(params);
+            ArrayAdapter<String> deptAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, spinnerValuelist);
+            // Drop down layout style - list view with radio button
+            deptAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(deptAdapter);
+            ll_extraLayout.addView(spinner);
+            spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    Log.e("TAG", ":" + spinnerValuelist.get(position));
+
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+
+                }
+            });
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Override
+    public void onClick(View v) {
+
+        /*if (v.getId() == R.id.btn_getVisitorDetails) {
+            String visitorId = et_visitorID.getText().toString();
+            getVisitorDetails(visitorId);
+        } else */
+        if (v == btn_verify) {
+            if (et_add_name.getText().toString().trim().equals("")) {
+                et_add_name.requestFocus();
+                et_add_name.setError("Please Enter Name:");
+//            } else if (et_add_company.getText().toString().trim().equals("")) {
+//                et_add_company.requestFocus();
+//                et_add_company.setError("Please Enter Company Name");
+            } else if (et_add_email.getText().toString().trim().equals("")) {
+                et_add_email.requestFocus();
+                et_add_email.setError("Please Enter Email");
+            } else if (!Common.isValidEmail(et_add_email.getText().toString().trim())) {
+                et_add_email.requestFocus();
+                et_add_email.setError("Please Enter valid Email");
+            } else if (et_host_name.getText().toString().trim().equals("")) {
+                et_host_name.requestFocus();
+                et_host_name.setError("Please Enter Host Name");
+            } else {
+                VisitorDetailsForm.vm = new VisitorModel();
+                //VisitorDetailsForm.vm.setVisitorId(et_visitorID.getText().toString().trim());
+                VisitorDetailsForm.vm.setName(et_add_name.getText().toString().trim());
+                VisitorDetailsForm.vm.setCompany(et_add_company.getText().toString().trim());
+                VisitorDetailsForm.vm.setPhno(et_add_phno.getText().toString().trim());
+                VisitorDetailsForm.vm.setEmail(et_add_email.getText().toString().trim());
+                VisitorDetailsForm.vm.setTitle(et_add_title.getText().toString().trim());
+                VisitorDetailsForm.vm.setHomePage(et_add_homepage.getText().toString().trim());
+                VisitorDetailsForm.vm.setAddress(et_add_address.getText().toString().trim());
+                if (!imageFilePath.trim().equals("")) {
+                    VisitorDetailsForm.vm.setIsImageTaken(true);
+                    VisitorDetailsForm.vm.setImagePath(imageFilePath);
+                }
+                //Intent intent=new Intent(AddViewVisitor.this.getActivity(),VisitorDetailsDisplay.class);
+                //startActivity(intent);
+                click();
+                //  ((VisitorDetailsForm) getActivity()).viewPager.setCurrentItem(1, true);
+            }
+        } else if (v.getId() == R.id.et_recurring_visits) {
+            //Recurring Visits are going here
+            showRecurringVisits();
+        } else if (v.getId() == R.id.btn_overRidden) {
+            String data = "";
+            try {
+                JSONObject jobj = new JSONObject(overrideData);
+                data = "Name: " + jobj.getString("name") + "\n" + "Email: " + jobj.getString("email") + "\n" + "Mobile No.: " + jobj.getString("mobileNo");
+            } catch (JSONException j) {
+            }
+            AlertDialog adb = new AlertDialog.Builder(this.getActivity())
+                    .setTitle("Business card Verification")
+                    .setMessage(data)
+                    .setIcon(R.drawable.menu_app_icon)
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                        }
+                    })
+                    .show();
+        }
+
+    }
+
+    public void click() {
+        {
+            if (Common.isNetworkAvailable(AddViewVisitor.this.getActivity())) {
+                String server_URL = "";
+                if (VisitorDetailsForm.vm.isImageTaken()) {
+
+                    //use image sending
+                    final ProgressDialog pDialog = new ProgressDialog(this.getContext());
+                    pDialog.setMessage("Uploading data to server...");
+                    pDialog.setCancelable(false);
+                    pDialog.show();
+                    String result = multipartRequest(APICalls.URL_addvisitorbasicInfo, VisitorDetailsForm.vm.getImagePath(), "image", "image/jpg");
+                    try {
+                        final JSONObject resultJson = new JSONObject(result);
+                        if (resultJson.getString("statusCode").trim().equals("200")) {
+                            pDialog.hide();
+                            new AlertDialog.Builder(this.getContext())
+                                    .setTitle("Business card Verification")
+                                    .setMessage(resultJson.getString("statusMessage").toString().trim())
+                                    .setIcon(R.drawable.menu_app_icon)
+                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            try {
+                                                JSONObject json = resultJson.getJSONObject("data");
+
+                                                VisitorDetailsForm.vm.setVisitorId(json.getString("visitorId").toString().trim());
+                                                VisitorDetailsForm.vm.setVisitingId(Integer.parseInt(json.getString("visitingId").toString().trim()));
+                                                APICalls.vm = VisitorDetailsForm.vm;
+                                                Intent intent = new Intent(AddViewVisitor.this.getActivity(), IssueBadge.class);
+                                                startActivity(intent);
+                                            } catch (JSONException je) {
+                                                je.printStackTrace();
+                                            }
+                                        }
+                                    })
+                                    .show();
+                        } else if (resultJson.getString("statusCode").toString().trim().equals("404")) {
+                            pDialog.hide();
+                            Common.gotoLoginPage(this.getActivity());
+                        } else {
+                            pDialog.hide();
+                            new AlertDialog.Builder(this.getActivity())
+                                    .setTitle("Business card Verification")
+                                    .setMessage(resultJson.getString("statusMessage").toString().trim())
+                                    .setIcon(R.drawable.menu_app_icon)
+                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                        }
+                                    })
+                                    .show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    try {
+                        final ProgressDialog pDialog = new ProgressDialog(this.getActivity());
+                        pDialog.setMessage("Uploading data to server...");
+                        pDialog.setCancelable(false);
+                        pDialog.show();
+                        StringEntity entity = null;
+                        JSONObject json = new JSONObject();
+                        if (!selected_visitingId.equals("")) {
+                            json.put("VisitingId", selected_visitingId);
+                            json.put("whomToMeet", et_host_name.getText().toString().trim());
+                            json.put("timeZone", TimeZone.getDefault().getID().toString().trim());
+                            json.put("purpose", et_visit_purpose.getText().toString().trim());
+                            json.put("room", "");
+                            json.put("employeeId", "");
+                            json.put("meetingId", "");
+                            json.put("recMeetingId", "0");
+                            json.put("departmentId", Common.getDepartmentIdFromLoginData(this.getActivity()).get(spn_departments.getSelectedItemPosition()));
+                            server_URL = APICalls.URL_reVerifyVisitor;
+                        } else {
+                            json.put("name", et_add_name.getText().toString().trim());
+                            json.put("mobileNo", et_add_phno.getText().toString().trim());
+                            // json.put("workPhone", et_add_phno.getText().toString().trim());
+                            json.put("email", et_add_email.getText().toString().trim());
+                            json.put("company", et_add_company.getText().toString().trim());
+                            json.put("visitorUID", "");
+                            json.put("designation", et_add_title.getText().toString().trim());
+                            json.put("homePage", et_add_homepage.getText().toString().trim());
+                            json.put("whomToMeet", et_host_name.getText().toString().trim());
+                            json.put("timeZone", TimeZone.getDefault().getID().toString().trim());
+                            json.put("centerId", APICalls.getSelectedCenterID(this.getActivity()));
+                            json.put("departmentId", Common.getDepartmentIdFromLoginData(this.getActivity()).get(spn_departments.getSelectedItemPosition()));
+                            json.put("employeeId", "");
+                            json.put("meetingId", "0");
+                            json.put("recMeetingId", "0");
+                            json.put("purpose", et_visit_purpose.getText().toString().trim());
+                            json.put("room", "");
+                            // json.put("jobTitle", et_add_title.getText().toString().trim());
+                            //json.put("address", et_add_address.getText().toString().trim());
+                            // json.put("meetingId","0");
+                            // json.put("recMeetingId","0");
+
+                            server_URL = APICalls.URL_addvisitorbasicInfoWithoutCardImg;
+                        }
+                        if (!et_recurring_visits.getText().toString().trim().equals("")) {
+                            json.put("isRecursive", "true");
+                            JSONArray rec_jsonAry = new JSONArray();
+                            for (int i = 0; i < recurring_selected.size(); i++) {
+                                JSONObject rec_json = new JSONObject();
+                                rec_json.put("startMeetingDateTime", recurring_selected.get(i).toString().trim());
+                                rec_json.put("endMeetingDateTime", recurring_selected.get(i).toString().trim());
+                                rec_jsonAry.put(rec_json);
+                            }
+                            json.put("recurringDates", rec_jsonAry);
+                        } else {
+                            json.put("isRecursive", "false");
+                        }
+                        System.out.println("json without image::" + json);
+                        entity = new StringEntity(json.toString());
+
+                        List<Header> headers = NetworkAdapter.getHeadersWithGovtAPI(this.getActivity());
+
+                        JsonHttpResponseHandler reponseHandler = new JsonHttpResponseHandler() {
+
+                            @Override
+                            public void onSuccess(int statusCode, Header[] headers,
+                                                  JSONObject response) {
+                                System.out.println("response::::::" + response);
+                                pDialog.hide();
+                                try {
+                                    if (response.getString("statusCode").toString().trim().equals("200")) {
+
+                                        JSONObject json = response.getJSONObject("data");
+                                        if (json.has("isRecordFound")) {
+                                            if (json.getString("isRecordFound").toString().trim().equals("true")) {
+                                                VisitorDetailsForm.vm.setVisitorId(json.getString("visitorId").toString().trim());
+                                                VisitorDetailsForm.vm.setVisitingId(Integer.parseInt(json.getString("visitingId").toString().trim()));
+                                                APICalls.vm = VisitorDetailsForm.vm;
+                                                new AlertDialog.Builder(AddViewVisitor.this.getActivity())
+                                                        .setTitle("Business card Verification")
+                                                        .setMessage("Details Matched\n Do You Want Override?")
+                                                        .setIcon(R.drawable.menu_app_icon)
+                                                        .setPositiveButton("Continue", new DialogInterface.OnClickListener() {
+                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                Intent in = new Intent(AddViewVisitor.this.getActivity(), Overridden.class);
+                                                                startActivity(in);
+                                                            }
+                                                        })
+                                                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                                            @Override
+                                                            public void onClick(DialogInterface dialog, int which) {
+
+                                                            }
+                                                        })
+                                                        .show();
+                                            } else {
+                                                VisitorDetailsForm.vm.setVisitorId(json.getString("visitorId").toString().trim());
+                                                VisitorDetailsForm.vm.setVisitingId(Integer.parseInt(json.getString("visitingId").toString().trim()));
+                                                APICalls.vm = VisitorDetailsForm.vm;
+                                                Intent in = new Intent(AddViewVisitor.this.getActivity(), IssueBadge.class);
+                                                startActivity(in);
+                                            }
+                                        } else {
+                                            new AlertDialog.Builder(AddViewVisitor.this.getActivity())
+                                                    .setTitle("Business card Verification")
+                                                    .setMessage(response.getString("statusMessage").toString().trim())
+                                                    .setIcon(R.drawable.menu_app_icon)
+                                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                                        public void onClick(DialogInterface dialog, int which) {
+
+                                                        }
+                                                    })
+                                                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                                        public void onClick(DialogInterface dialog, int which) {
+                                                        }
+                                                    })
+                                                    .show();
+                                        }
+                                    } else if (response.getString("statusCode").toString().trim().equals("404")) {
+                                        Common.gotoLoginPage(AddViewVisitor.this.getActivity());
+                                    } else {
+                                        new AlertDialog.Builder(AddViewVisitor.this.getActivity())
+                                                .setTitle("Business card Verification")
+                                                .setMessage(response.getString("statusMessage").toString().trim())
+                                                .setIcon(R.drawable.menu_app_icon)
+                                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                                    public void onClick(DialogInterface dialog, int which) {
+                                                    }
+                                                })
+                                                .show();
+                                    }
+                                } catch (JSONException je) {
+                                    je.printStackTrace();
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(int statusCode, Header[] headers,
+                                                  Throwable throwable, JSONObject errorResponse) {
+                                System.out.println("errorResponse" + errorResponse);
+                                super.onFailure(statusCode, headers, throwable,
+                                        errorResponse);
+
+                                pDialog.hide();
+                            }
+
+                        };
+                        NetworkAdapter.postWithHttpHeader(AddViewVisitor.this.getActivity(), server_URL,
+                                entity, "application/json", reponseHandler, headers);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                Common.alertDialog(AddViewVisitor.this.getActivity(), "No internet connection.Please check the internet connection");
+            }
+        }
+    }
+
+    AlertDialog recurring_Visits_Dialog;
+
+    public void showRecurringVisits() {
+        final LayoutInflater factory = LayoutInflater.from(getContext());
+        recurring_Visits_View = factory.inflate(R.layout.recurring_visits, null);
+        recurring_Visits_View.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 380));
+        Toolbar toolbar = (Toolbar) recurring_Visits_View.findViewById(R.id.recurring_toolbar);
+        toolbar.setBackgroundColor(Color.parseColor(primary_color));
+        Button add_btn = (Button) recurring_Visits_View.findViewById(R.id.add);
+
+        add_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d("add btn", "clicked");
+                MyDatePicker myDatePicker = new MyDatePicker(context);
+            }
+        });
+
+        Button done_btn = (Button) recurring_Visits_View.findViewById(R.id.done);
+        done_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                recurring_Visits_View.setVisibility(View.GONE);
+                if (recurring_selected != null) {
+                    et_recurring_visits.setText(recurring_selected.size() + " Recurring Visits");
+                }
+                recurring_Visits_Dialog.dismiss();
+            }
+        });
+        recurring_Visits_Dialog = new AlertDialog.Builder(getContext()).create();
+        recurring_Visits_Dialog.setView(recurring_Visits_View);
+        recurring_Visits_Dialog.show();
+        if (recurring_selected != null) {
+            updateDisplay(getContext());
+        }
+
+    }
+
+    Calendar myCalendar = Calendar.getInstance();
+
+    public class MyDatePicker implements DatePickerDialog.OnDateSetListener {
+        Context _context;
+        int _year, _month, _date;
+
+        public MyDatePicker(Context ctx) {
+            _context = ctx;
+            showDatePicker();
+        }
+
+        public void showDatePicker() {
+            Calendar calendar = Calendar.getInstance();
+            _year = calendar.get(Calendar.YEAR);
+            _month = calendar.get(Calendar.MONTH);
+            _date = calendar.get(Calendar.DAY_OF_MONTH);
+            DatePickerDialog datePickerDialog = new DatePickerDialog(_context, this, _year, _month, _date);
+            //datePickerDialog.getDatePicker().setMaxDate(new Date().getTime());
+            datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
+            datePickerDialog.show();
+        }
+
+        @Override
+        public void onDateSet(DatePicker datePicker, int year, int month, int date) {
+            if(datePicker.isShown()) {
+                _year = year;
+                _month = month;
+                _date = date;
+                myCalendar.set(Calendar.YEAR, year);
+                myCalendar.set(Calendar.MONTH, _month);
+                myCalendar.set(Calendar.DAY_OF_MONTH, _date);
+                updateDate();
+            }
+        }
+
+        public void updateDate() {
+            String myFormat = "MMM dd,yyyy "; //In which you need put here
+            SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.getDefault());
+            MyTimePicker myTimePicker = new MyTimePicker(_context, sdf.format(myCalendar.getTime()));
+        }
+
+    }
+
+    public class MyTimePicker implements TimePickerDialog.OnTimeSetListener {
+        int _hour, _min, am_pm;
+        Context _context;
+        String _dateStr;
+
+        public MyTimePicker(Context context, String date) {
+            _context = context;
+            _dateStr = date;
+            showTimePicker();
+        }
+
+        public void showTimePicker() {
+            Calendar cal = Calendar.getInstance();
+            _hour = cal.get(Calendar.HOUR_OF_DAY);
+            _min = cal.get(Calendar.MINUTE);
+            am_pm = cal.get(Calendar.AM_PM);
+            TimePickerDialog timePickerDialog = new TimePickerDialog(_context, this, _hour, _min, true);
+            timePickerDialog.show();
+        }
+
+        @Override
+        public void onTimeSet(TimePicker timePicker, int hour, int min) {
+            _hour = hour;
+            _min = min;
+            if (!recurring_selected.contains(_dateStr + " " + _hour + ":" + _min + " PM")) {
+                recurring_selected.add(_dateStr + " " + _hour + ":" + _min + " PM");
+            }
+            updateDisplay(_context);
+        }
+    }
+
+    private void updateDisplay(Context _context) {
+        Toolbar.LayoutParams params = new Toolbar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 100);
+        LinearLayout linearLayout = (LinearLayout) recurring_Visits_View.findViewById(R.id.ll_visits);
+        linearLayout.removeAllViews();
+        for (int i = 0; i < recurring_selected.size(); i++) {
+            TextView tv = new TextView(_context);
+            tv.setLayoutParams(params);
+            tv.setTextSize(16);
+            tv.setPadding(8, 3, 3, 3);
+            tv.setText(recurring_selected.get(i).toString().trim());
+            linearLayout.addView(tv);
+        }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        if (!VisitorDetailsForm.jdata.trim().equals("")) {
+            menu.findItem(R.id.action_camera).setVisible(false);
+        }
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_camera) {
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+            mImageCaptureUri = getOutputMediaFileUri();
+            imageFilePath = mImageCaptureUri.getPath();
+            intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, mImageCaptureUri);
+
+            try {
+                intent.putExtra("return-data", true);
+
+                startActivityForResult(intent, 123);
+            } catch (ActivityNotFoundException e) {
+                e.printStackTrace();
+            }
+
+
+        } else if (item.getItemId() == R.id.action_home) {
+            Intent in = new Intent(getActivity(), HomeVistorsList.class);
+            startActivity(in);
+        }
+
+        return false;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case 123:
+                Bitmap myBitmap = BitmapFactory.decodeFile(imageFilePath);
+                if (myBitmap != null) {
+                    Bitmap resizedbitmap = Bitmap.createScaledBitmap(myBitmap, 200, 200, true);
+                    iv_businessCard_captured.setImageBitmap(resizedbitmap);
+                    et_add_name.setText("");
+                    et_add_company.setText("");
+                    et_add_phno.setText("");
+                    et_add_email.setText("");
+                    et_add_title.setText("");
+                    et_add_homepage.setText("");
+                    et_add_address.setText("");
+                    new AsyncProcessTask(getActivity()).execute(imageFilePath, resultUrl);
+
+                    doCrop();//sai
+                }
+
+                break;
+            case 321:
+                Bundle extras = data.getExtras();
+                if (extras != null) {
+                    Bitmap photo = extras.getParcelable("data");
+                    iv_businessCard_captured.setImageBitmap(photo);
+                }
+                File f = new File(mImageCaptureUri.getPath());
+                //  if (f.exists()) f.delete();
+                new AsyncProcessTask(getActivity()).execute(imageFilePath, resultUrl);
+                break;
+
+
+        }
+        //System.out.println("Image path:" + imageFilePath);
+        //new AsyncProcessTask(this).execute(imageFilePath, resultUrl);
+    }
+
+
+    private void doCrop() {
+        final ArrayList<CropOption> cropOptions = new ArrayList<CropOption>();
+        Intent intent = new Intent("com.android.camera.action.CROP");
+        intent.setType("image/*");
+        List<ResolveInfo> list = getActivity().getPackageManager().queryIntentActivities(intent, 0);
+        int size = list.size();
+        Log.e("size", ":" + size);
+        if (size == 0) {
+            Toast.makeText(getActivity(), "Can not find image crop app", Toast.LENGTH_SHORT).show();
+            return;
+        } else {
+            intent.setData(mImageCaptureUri);
+   /*         intent.putExtra("outputX", 512);
+            intent.putExtra("outputY", 512);*/
+            intent.putExtra("aspectX", 0);
+            intent.putExtra("aspectY", 0);
+            intent.putExtra("scale", true);
+            intent.putExtra("return-data", true);
+
+            if (size == 1) {
+                Intent i = new Intent(intent);
+                ResolveInfo res = list.get(0);
+
+                i.setComponent(new ComponentName(res.activityInfo.packageName, res.activityInfo.name));
+
+                startActivityForResult(i, 321);
+            } else {
+                for (ResolveInfo res : list) {
+                    final CropOption co = new CropOption();
+
+                    co.title = getActivity().getPackageManager().getApplicationLabel(res.activityInfo.applicationInfo);
+                    co.icon = getActivity().getPackageManager().getApplicationIcon(res.activityInfo.applicationInfo);
+                    co.appIntent = new Intent(intent);
+                    co.appIntent.setComponent(new ComponentName(res.activityInfo.packageName, res.activityInfo.name));
+                    cropOptions.add(co);
+                }
+
+                CropOptionAdapter adapter = new CropOptionAdapter(getActivity().getApplicationContext(), cropOptions);
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                builder.setTitle("Choose Crop App");
+                builder.setAdapter(adapter, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int item) {
+                        startActivityForResult(cropOptions.get(item).appIntent, 321);
+                    }
+                });
+
+                builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+
+                        if (mImageCaptureUri != null) {
+                            getActivity().getContentResolver().delete(mImageCaptureUri, null, null);
+                            mImageCaptureUri = null;
+                        }
+                    }
+                });
+
+                AlertDialog alert = builder.create();
+
+                alert.show();
+            }
+        }
+    }
+
+    public void updateResults(Boolean success) {
+        if (!success)
+            return;
+        try {
+            StringBuffer contents = new StringBuffer();
+
+            FileInputStream fis = getActivity().openFileInput(resultUrl);
+            try {
+                Reader reader = new InputStreamReader(fis, "UTF-8");
+                BufferedReader bufReader = new BufferedReader(reader);
+                String text = null;
+                int i = 0;
+                while ((text = bufReader.readLine()) != null) {
+                    contents.append(text).append(
+                            System.getProperty("line.separator"));
+
+                    System.out.println("i=" + i + ":::::::::" + text);
+                    updateTextData(text);
+
+                    i++;
+                }
+            } finally {
+                fis.close();
+                dialog.dismiss();
+
+            }
+            // Document doc = getDomElement(contents.toString()); // getting DOM element
+            // updateTextData(doc);
+
+
+            //System.out.println("contents::::::" + contents.toString());
+           /* String data=contents.toString();
+                String[] dataAry=data.split("//\n");
+            if (data.startsWith("N;CHARSET=utf-8:")){
+                et_add_name.setText(data.substring(data.indexOf("N;CHARSET=utf-8:")+1));
+            }*/
+            // displayMessage(contents.toString());
+        } catch (Exception e) {
+            //displayMessage("Error: " + e.getMessage());
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void updateTextData(String text) {
+        //  NodeList nl = doc.getElementsByTagName("Phone");
+        if (text.startsWith("N;CHARSET=utf-8")) {
+            et_add_name.setText(text.substring(text.indexOf(":") + 1).replace(';', ' '));
+        }
+        if (text.startsWith("TEL;CHARSET=utf-8")) {
+            et_add_phno.setText(text.substring(text.indexOf(":") + 1).replace(';', ' '));
+        }
+        if (text.startsWith("EMAIL;CHARSET=utf-8:")) {
+            et_add_email.setText(text.substring(text.indexOf(":") + 1).replace(';', ' '));
+        }
+        if (text.startsWith("ORG;CHARSET=utf-8")) {
+            et_add_company.setText(text.substring(text.indexOf(":") + 1).replace(';', ' '));
+        }
+        if (text.startsWith("TITLE;CHARSET=utf-8")) {
+            et_add_title.setText(text.substring(text.indexOf(":") + 1).replace(';', ' '));
+        }
+        if (text.startsWith("URL;CHARSET=utf-8")) {
+            et_add_homepage.setText(text.substring(text.indexOf(":") + 1).replace(';', ' '));
+        }
+        if (text.startsWith("ADR;CHARSET=utf-8")) {
+            et_add_address.setText(text.substring(text.indexOf(":") + 1).replace(';', ' '));
+        }
+    }
+
+    public String multipartRequest(String urlTo, String filepath, String filefield, String fileMimeType) {
+        Log.e("multipartRequest" + filepath, ":" + urlTo);
+        HttpURLConnection connection = null;
+        DataOutputStream outputStream = null;
+        InputStream inputStream = null;
+
+        String twoHyphens = "--";
+        String boundary = "*****" + Long.toString(System.currentTimeMillis()) + "*****";
+        String lineEnd = "\r\n";
+
+        String result = "";
+        System.out.println("urlTo::" + urlTo);
+
+        int bytesRead, bytesAvailable, bufferSize;
+        byte[] buffer;
+        int maxBufferSize = 1 * 1024 * 1024;
+
+        String[] q = filepath.split("/");
+        int idx = q.length - 1;
+
+        try {
+            File file = new File(filepath);
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            URL url = new URL(urlTo);
+            connection = (HttpURLConnection) url.openConnection();
+
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setUseCaches(false);
+
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Connection", "Keep-Alive");
+            connection.setRequestProperty("User-Agent", "Android Multipart HTTP Client 1.0");
+            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            //-------------headers
+
+            String data = Common.getSavedUserLoginData(getContext());
+            JSONObject dataObj = new JSONObject(data).getJSONObject("data");
+            connection.setRequestProperty("userId", dataObj.getString("userId"));
+            connection.setRequestProperty("logedInUserEmail", dataObj.getString("email"));
+            connection.setRequestProperty("securityToken", dataObj.getString("securityToken"));
+            connection.setRequestProperty("loggedInOrgId", dataObj.getString("organizationId"));
+
+            //employee id
+            connection.setRequestProperty("employeeId", APICalls.employeeID);
+            Log.e("loginorg id", ":" + dataObj.getString("organizationId"));
+            connection.setRequestProperty("fuzzyLogic", "1");
+            connection.setRequestProperty("govAPI", "1");
+//            connection.setRequestProperty("siteID", dataobj.getString("siteID"));
+
+            outputStream = new DataOutputStream(connection.getOutputStream());
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + filefield + "\"; filename=\"" + q[idx] + "\"" + lineEnd);
+            outputStream.writeBytes("Content-Type: " + fileMimeType + lineEnd);
+            outputStream.writeBytes("Content-Transfer-Encoding: binary" + lineEnd);
+
+            outputStream.writeBytes(lineEnd);
+
+            bytesAvailable = fileInputStream.available();
+            bufferSize = Math.min(bytesAvailable, maxBufferSize);
+            buffer = new byte[bufferSize];
+
+            bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            while (bytesRead > 0) {
+                outputStream.write(buffer, 0, bufferSize);
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            }
+
+            outputStream.writeBytes(lineEnd);
+
+            // Upload POST Data
+            String key = "visitorData";
+            JSONObject json = new JSONObject();
+            json.put("name", et_add_name.getText().toString().trim());
+            json.put("mobileNo", et_add_phno.getText().toString().trim());
+            json.put("workPhone", et_add_phno.getText().toString().trim());
+            json.put("email", et_add_email.getText().toString().trim());
+            json.put("company", et_add_company.getText().toString().trim());
+            json.put("designation", et_add_title.getText().toString().trim());
+            json.put("address", et_add_address.getText().toString().trim());
+            json.put("homePage", et_add_homepage.getText().toString().trim());
+             json.put("whomToMeet", et_host_name.getText().toString().trim());
+            json.put("timeZone", TimeZone.getDefault().getID().toString().trim());
+            json.put("centerId",APICalls.getSelectedCenterID(this.getActivity()));
+            json.put("departmentId", Common.getDepartmentIdFromLoginData(this.getActivity()).get(spn_departments.getSelectedItemPosition()));
+            json.put("meetingId","0");
+            json.put("recMeetingId",0);
+            json.put("purpose",et_visit_purpose.getText().toString().trim());
+            json.put("employeeId", APICalls.employeeID);
+            json.put("visitorUID", "");
+            json.put("room","");
+            if(!et_recurring_visits.getText().toString().trim().equals("")){
+                json.put("isRecursive","true");
+                JSONArray rec_jsonAry=new JSONArray();
+                for (int i=0;i<recurring_selected.size();i++){
+                    JSONObject rec_json=new JSONObject();
+                    rec_json.put("startMeetingDateTime",recurring_selected.get(i).toString().trim());
+                    rec_json.put("endMeetingDateTime",recurring_selected.get(i).toString().trim());
+                    rec_jsonAry.put(rec_json);
+                }
+                json.put("recurringDates",rec_jsonAry);
+            }else{
+                json.put("isRecursive","false");
+            }
+            System.out.println("visitor json with image:::" + json);
+            String value = json.toString().trim();
+            System.out.println("visitor data:::" + value);
+            //  while (keys.hasNext()) {
+            //  String key = keys.next();
+            // String value = parmas.get(key);
+
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + key + "\"" + lineEnd);
+            outputStream.writeBytes("Content-Type: text/plain" + lineEnd);
+            outputStream.writeBytes(lineEnd);
+            outputStream.writeBytes(value);
+            outputStream.writeBytes(lineEnd);
+            //  }
+
+            outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+
+            if (200 != connection.getResponseCode()) {
+                System.out.println("Failed to upload code:" + connection.getResponseCode() + " " + connection.getResponseMessage());
+            }
+
+            inputStream = connection.getInputStream();
+
+            result = this.convertStreamToString(inputStream);
+
+            fileInputStream.close();
+            inputStream.close();
+            outputStream.flush();
+            outputStream.close();
+            System.out.println("result:::::::" + result);
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    private String convertStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
+    }
+
+    public interface Listable {
+        String getLabel();
+    }
+
+    public static class ClickToSelectEditText<T extends Listable> extends android.support.v7.widget.AppCompatEditText {
+
+        List<String> mItems;
+        String[] mListableItems;
+        CharSequence mHint;
+
+        OnItemSelectedListener<ArrayList<String>> onItemSelectedListener;
+
+        public ClickToSelectEditText(Context context) {
+            super(context);
+
+            mHint = getHint();
+        }
+
+        public ClickToSelectEditText(Context context, AttributeSet attrs) {
+            super(context, attrs);
+
+            mHint = getHint();
+        }
+
+        public ClickToSelectEditText(Context context, AttributeSet attrs, int defStyleAttr) {
+            super(context, attrs, defStyleAttr);
+
+            mHint = getHint();
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            setFocusable(false);
+            setClickable(true);
+        }
+
+        public void setItems(List<String> items) {
+            this.mItems = items;
+            this.mListableItems = new String[items.size()];
+
+            int i = 0;
+
+            for (String item : mItems) {
+                mListableItems[i++] = item;
+            }
+
+            configureOnClickListener();
+        }
+
+        private void configureOnClickListener() {
+            setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(view.getContext());
+                    builder.setTitle(mHint);
+                    builder.setItems(mListableItems, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int selectedIndex) {
+                            setText(mListableItems[selectedIndex]);
+
+                            if (onItemSelectedListener != null) {
+                                onItemSelectedListener.onItemSelectedListener(mItems.get(selectedIndex), selectedIndex);
+                            }
+                        }
+                    });
+                    builder.setPositiveButton(android.R.string.cancel, null);
+                    builder.create().show();
+                }
+            });
+        }
+
+        public void setOnItemSelectedListener(OnItemSelectedListener<ArrayList<String>> onItemSelectedListener) {
+            this.onItemSelectedListener = onItemSelectedListener;
+        }
+
+        public interface OnItemSelectedListener<T> {
+            void onItemSelectedListener(String item, int selectedIndex);
+        }
+    }
+
+    public class AsyncProcessTask extends AsyncTask<String, String, Boolean> {
+        public AsyncProcessTask(Context ctx) {
+            if (dialog == null)
+                dialog = new ProgressDialog(ctx);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            dialog.setMessage("Processing");
+            dialog.setCancelable(false);
+            dialog.setCanceledOnTouchOutside(false);
+            if (!dialog.isShowing())
+                dialog.show();
+        }
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            String inputFile = params[0];
+            String outputFile = params[1];
+            try {
+                Client restClient = new Client();
+                restClient.applicationId = "VisitorTracking";
+                restClient.password = "ZLIMMJRpqFGdQ9OJRXEytTWc";
+
+                // Obtain installation id when running the application for the first time
+                SharedPreferences settings = getActivity().getPreferences(MODE_PRIVATE);
+                String instIdName = "installationId";
+                if (!settings.contains(instIdName)) {
+                    // Get installation id from server using device id
+                    String deviceId = android.provider.Settings.Secure.getString(getActivity().getContentResolver(),
+                            android.provider.Settings.Secure.ANDROID_ID);
+
+                    // Obtain installation id from server
+                    publishProgress("First run: obtaining installation id..");
+                    String installationId = restClient.activateNewInstallation(deviceId);
+                    publishProgress("Done. Installation id is '" + installationId + "'");
+
+                    SharedPreferences.Editor editor = settings.edit();
+                    editor.putString(instIdName, installationId);
+                    editor.commit();
+                }
+
+                String installationId = settings.getString(instIdName, "");
+                restClient.applicationId += installationId;
+
+                publishProgress("Uploading image...");
+
+                String language = "English";
+                BusCardSettings busCardSettings = new BusCardSettings();
+                busCardSettings.setLanguage(language);
+                busCardSettings.setOutputFormat(BusCardSettings.OutputFormat.vCard);
+                Task task = restClient.processBusinessCard(inputFile, busCardSettings);
+                publishProgress("Uploading..");
+                while (task.isTaskActive()) {
+
+                    Thread.sleep(5000);
+                    publishProgress("Waiting..");
+                    task = restClient.getTaskStatus(task.Id);
+                }
+
+                if (task.Status == Task.TaskStatus.Completed) {
+                    publishProgress("Downloading..");
+                    FileOutputStream fos = getActivity().openFileOutput(outputFile, MODE_PRIVATE);
+
+                    try {
+                        restClient.downloadResult(task, fos);
+                    } finally {
+                        fos.close();
+                    }
+                    publishProgress("Ready");
+                } else if (task.Status == Task.TaskStatus.NotEnoughCredits) {
+                    throw new Exception("Not enough credits to process task. Add more pages to your application's account.");
+                } else {
+                    throw new Exception("Task failed");
+                }
+
+                return true;
+            } catch (Exception e) {
+                final String message = "Error: " + e.getMessage();
+                publishProgress(message);
+                System.out.println("message::::" + message);
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            super.onPostExecute(result);
+            if (dialog.isShowing()) {
+                dialog.dismiss();
+            }
+            dialog.dismiss();
+            updateResults(result);
+        }
+    }
+
+    class JobCategory implements AddViewVisitor.Listable {
+
+        @Override
+        public String getLabel() {
+            return null;
+        }
+
+    }
+}

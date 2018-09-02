@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">@android:color/darker_gray</color>
+    <color name="colorPrimaryDark">#bf1919</color>
+    <color name="colorAccent">#F00025</color>
+    <color name="white">#FFFFFF</color>
+    <color name="red">#CC0000</color>
+    <color name="redish">#CC0000</color>
+    <color name="appred">#F00025</color>
+
+</resources>
